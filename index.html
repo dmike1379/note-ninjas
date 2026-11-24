@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Note Ninjas</title>
+<meta name="theme-color" content="#0d3b2e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE  occasion: a kids' action game, bright and playful, but every second is ear training
+   IDEA   a night bamboo dojo where little ninjas train their ears; each game is a training scroll
+   PICTURE the ninja mascot over a moonlit bamboo scene; each game card carries its own animated art
+   COLOUR pine-night green ground, paper-white keys, cherry pink, violet and orange per game, gold for wins
+   TYPE   Bungee display (arcade lettering) + Nunito text
+   LAYOUT one phone screen per view: title, swipe picker, then each game fills the screen */
+:root{color-scheme:dark;--bg:#0d3b2e;--bg2:#0a2c22;--panel:rgba(10,44,34,.86);--ink:#fdf6e3;--dim:#a9c4b6;--pink:#ff4f7b;--violet:#8f7cff;--orange:#ff8a3d;--gold:#ffcc33;--good:#5fe39a;--bad:#ff6b5b;--key:#fbf6ec;--keyink:#1d1a2e;--line:rgba(255,255,255,.12)}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:600 16px/1.4 Nunito,system-ui,sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+#duel{touch-action:none}
+#scene{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+.app{position:relative;z-index:1;height:100%;max-width:720px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.screen{height:100%;display:flex;flex-direction:column}
+.screen[hidden]{display:none}
+.disp{font-family:Bungee,Impact,sans-serif;font-weight:400}
+.logo{font:400 clamp(40px,12vw,64px)/1.0 Bungee,Impact,sans-serif;color:var(--gold);text-align:center;margin:8px 0 0;text-shadow:0 4px 0 var(--pink),0 8px 18px rgba(0,0,0,.45)}
+.sub{text-align:center;color:var(--dim);margin:6px 0 0;font-weight:800}
+.hero{flex:1;display:grid;place-items:center;min-height:0}
+.hero svg{height:100%;max-height:300px;width:auto}
+.panel{background:var(--panel);border:2px solid var(--line);border-radius:22px;padding:16px;display:grid;gap:14px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.lab{color:var(--dim);font-weight:800}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{min-height:44px;padding:0 16px;border-radius:22px;background:rgba(255,255,255,.08);font-weight:800}
+.chip[aria-pressed=true]{background:var(--acc,var(--pink));color:#fff}
+.stepper{display:flex;align-items:center;gap:4px}
+.stepper button{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);font:400 18px Bungee,sans-serif}
+.stepper output{font:400 18px Bungee,sans-serif;min-width:4.6em;text-align:center}
+.what{color:var(--dim);font-size:15px;margin:-6px 0 0}
+.go{min-height:60px;border-radius:30px;background:var(--acc,var(--pink));color:#fff;font:400 24px Bungee,sans-serif;box-shadow:0 6px 0 rgba(0,0,0,.35);width:100%}
+.go:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.go:disabled{opacity:.7}
+.go.alt{background:rgba(255,255,255,.14);font-size:18px;min-height:50px}
+.credit{font-size:13px;color:var(--dim);text-align:center;margin:10px 0 0}
+.credit a{color:var(--dim)}
+.top{display:flex;align-items:center;gap:10px}
+.round{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);display:grid;place-items:center;flex:none}
+.pill{font:400 15px Bungee,sans-serif;background:var(--gold);color:var(--keyink);border-radius:16px;padding:6px 12px;white-space:nowrap}
+.score{margin-left:auto;font:400 22px Bungee,sans-serif;color:var(--gold);white-space:nowrap}
+.meter{margin-top:10px;background:var(--panel);border-radius:16px;padding:8px 10px}
+.slots{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px;max-width:360px;margin:0 auto}
+.slot{height:18px;border-radius:9px;background:rgba(255,255,255,.12)}
+.slot.ok{background:var(--good)}.slot.no{background:var(--bad)}
+.hint{font-size:13px;color:var(--dim);margin:6px 0 0;text-align:center}
+.stage{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:6px 0}
+.stage>svg{flex:1;min-height:0;max-height:200px;width:auto}
+.bounce{transform-origin:50% 100%}
+.jump{animation:jump .55s ease-out}.shake{animation:shake .4s}
+@keyframes jump{30%{transform:translateY(-18%) rotate(-6deg)}60%{transform:translateY(0) scale(1.04,.96)}}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.say{font:400 clamp(20px,6vw,28px)/1.1 Bungee,sans-serif;text-align:center;min-height:1.2em;margin:0}
+.say.ok{color:var(--good)}.say.no{color:var(--bad)}
+.again{min-height:48px;padding:0 22px;border-radius:24px;background:rgba(255,255,255,.12);font-weight:800}
+/* keyboard */
+.kb{position:relative;height:clamp(170px,34vh,290px);display:flex;gap:4px;padding:6px;background:var(--bg2);border-radius:18px;box-shadow:inset 0 0 0 2px var(--line)}
+.wk{flex:1;border-radius:0 0 12px 12px;background:var(--key);color:var(--keyink);display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;font:400 clamp(18px,5vw,26px) Bungee,sans-serif;box-shadow:inset 0 -8px 0 #ddd3bf}
+.wk[disabled]{background:#5d7d6f;color:transparent;box-shadow:inset 0 -8px 0 #4d6b5e;cursor:default}
+.wk.hide{color:transparent}
+.wk.press{background:#fff3c4}.wk.right{background:var(--good)}.wk.wrong{background:var(--bad)}
+.glow{animation:glow .9s ease-in-out 2}
+@keyframes glow{50%{background:var(--gold)}}
+/* picker */
+.ptop{display:flex;align-items:center;gap:10px}
+.who{min-height:44px;padding:0 14px 0 6px;border-radius:22px;background:rgba(255,255,255,.1);display:flex;align-items:center;gap:8px;font-weight:800}
+.who i{width:32px;height:32px;border-radius:50%;background:var(--pink);display:grid;place-items:center;font:400 15px Bungee,sans-serif;font-style:normal}
+.ptitle{font:400 20px Bungee,sans-serif;color:var(--gold);margin:0 auto 0 4px}
+.track{flex:1;min-height:0;display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:12px -16px 0;padding:0 16px}
+.track::-webkit-scrollbar{display:none}
+.gcard{flex:0 0 100%;scroll-snap-align:center;display:flex;flex-direction:column;gap:12px;background:var(--panel);border:3px solid var(--acc);border-radius:26px;padding:14px;overflow:hidden}
+.art{flex:1;min-height:110px;border-radius:18px;background:color-mix(in srgb,var(--acc) 22%,var(--bg2));display:grid;place-items:center;overflow:hidden}
+.art svg{width:100%;height:100%}
+.gname{font:400 clamp(26px,8vw,36px)/1 Bungee,sans-serif;margin:0;color:var(--acc)}
+.gtag{margin:-6px 0 0;color:var(--dim);font-weight:800}
+.opts{display:grid;gap:8px}
+.best{font-size:14px;color:var(--dim);margin:0}
+.pnav{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px}
+.dots{display:flex;gap:8px}
+.dot{width:10px;height:10px;border-radius:5px;background:rgba(255,255,255,.25);transition:width .2s}
+.dot.on{width:26px;background:var(--gold)}
+.fl{animation:fl 1.6s ease-in-out infinite;animation-play-state:paused;transform-box:fill-box}
+.fl.b{animation-delay:-.5s}.fl.c{animation-delay:-1s}
+@keyframes fl{50%{transform:translateY(-14px) rotate(8deg)}}
+.flip{animation:flip 2.4s ease-in-out infinite;animation-play-state:paused;transform-box:fill-box;transform-origin:center}
+@keyframes flip{0%,35%{transform:scaleX(1)}45%{transform:scaleX(0)}55%,85%{transform:scaleX(1)}95%{transform:scaleX(0)}}
+.face{animation:face 2.4s steps(1) infinite;animation-play-state:paused}
+@keyframes face{0%{opacity:0}45%{opacity:1}95%{opacity:0}}
+.zap{animation:zap .9s ease-in-out infinite;animation-play-state:paused;transform-box:fill-box;transform-origin:center}
+@keyframes zap{50%{transform:scale(1.35) rotate(20deg)}}
+.lunge{animation:lungeL 1.8s ease-in-out infinite;animation-play-state:paused}.lunge.r{animation-name:lungeR}
+@keyframes lungeL{50%{transform:translateX(12px)}}@keyframes lungeR{50%{transform:translateX(-12px)}}
+.gcard.on .fl,.gcard.on .flip,.gcard.on .face,.gcard.on .zap,.gcard.on .lunge{animation-play-state:running}
+/* shadow match */
+.sstat{margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.tag{padding:8px 14px;border-radius:18px;background:var(--panel);border:2px solid var(--line);font-weight:800;white-space:nowrap}
+.tag.turn{border-color:var(--gold);background:color-mix(in srgb,var(--pc) 45%,var(--bg2))}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px auto 4px;width:100%;max-width:480px}
+.card{border-radius:14px;background:#2b2357;box-shadow:inset 0 -6px 0 rgba(0,0,0,.3),0 0 0 2px var(--line);display:grid;place-items:center;overflow:hidden;position:relative}
+.card svg{width:62%;height:62%}
+.card.up{background:var(--gold);color:var(--keyink)}
+.card.done{background:var(--pc,var(--good));color:var(--keyink);font:400 clamp(22px,7vw,34px) Bungee,sans-serif}
+.card.turning{animation:turn .22s ease-in-out}
+@keyframes turn{50%{transform:scaleX(0)}}
+.wave{animation:wave .7s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
+@keyframes wave{to{transform:scaleY(.4)}}
+/* ear duel */
+.igrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%}
+.ib{border-radius:18px;background:var(--panel);border:2px solid var(--line);padding:8px 4px 10px;display:grid;justify-items:center;gap:2px;font-weight:800;min-height:96px}
+.ib svg{width:min(72px,70%);aspect-ratio:1;height:auto}
+.ib.hide span{visibility:hidden}
+.ib.right{background:var(--good);color:var(--keyink)}.ib.wrong{background:var(--bad)}
+.ib.glow{animation:glowb .9s ease-in-out 2}
+@keyframes glowb{50%{background:var(--gold);color:var(--keyink)}}
+.duel{flex:1;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto minmax(0,1fr);gap:8px}
+.half{display:flex;flex-direction:column;gap:6px;justify-content:flex-end;border-radius:20px;padding:8px;background:color-mix(in srgb,var(--pc) 22%,var(--bg2));min-height:0}
+.half.top{transform:rotate(180deg)}
+.half .row{justify-content:space-between}
+.half .nm{font:400 18px Bungee,sans-serif}
+.half .pts{font:400 24px Bungee,sans-serif;color:var(--gold)}
+.half .igrid{gap:6px}
+.half .ib{min-height:0;padding:4px 2px 6px;font-size:14px}
+.half .ib svg{width:min(56px,62%)}
+.half.locked .igrid{opacity:.35}
+.half .msg{font:400 18px Bungee,sans-serif;text-align:center;min-height:1.3em;margin:0}
+.mid{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.mid .say{font-size:18px;flex:1}
+/* overlays */
+.over{position:fixed;inset:0;z-index:5;display:grid;place-items:center;background:rgba(5,25,19,.88);padding:24px}
+.over[hidden]{display:none}
+.ocard{max-width:420px;width:100%;text-align:center;display:grid;gap:12px;background:var(--bg);border:3px solid var(--gold);border-radius:26px;padding:24px 20px}
+.ocard h2{font:400 clamp(32px,10vw,48px)/1 Bungee,sans-serif;color:var(--gold);margin:0;text-shadow:0 4px 0 var(--pink)}
+.big{font:400 72px/1 Bungee,sans-serif;color:var(--pink);display:grid;place-items:center}
+.big svg{width:110px;height:110px}
+.ocard p{margin:0;font-size:17px}
+.toast{position:fixed;left:50%;bottom:calc(36vh + 40px);transform:translateX(-50%);z-index:4;background:var(--bg2);border:2px solid var(--dim);border-radius:18px;padding:10px 16px;font-weight:800;white-space:nowrap}
+.toast[hidden]{display:none}
+/* answer pads */
+.pk.press{background:#fff3c4!important}.pk.right{background:var(--good)!important}.pk.wrong{background:var(--bad)!important}
+.bk{position:absolute;top:6px;width:7%;height:58%;background:var(--keyink);border-radius:0 0 8px 8px;box-shadow:inset 0 -6px 0 #000;z-index:2;color:#fff;font:400 11px Bungee,sans-serif;display:flex;align-items:flex-end;justify-content:center;padding:0 0 8px}
+.bk[disabled]{pointer-events:none;color:transparent;opacity:.85}
+.bk.hide{color:transparent}
+.kb.pad-staff{background:#fbf6ec;gap:0;padding:6px 4px}
+.clef{flex:1;display:flex;flex-direction:column}
+.clef svg{width:100%;flex:1;min-height:0}
+.clef::after{content:'';height:24px}
+.sk{flex:1;display:flex;flex-direction:column;border-radius:8px;padding:0;color:#1d1a2e}
+.sk svg{width:100%;flex:1;min-height:0}
+.sk span{font:400 15px Bungee,sans-serif;height:24px;line-height:24px}
+.sk[disabled] .head,.sk[disabled] .nl,.sk[disabled] span{opacity:.22}
+.sk.hide span{visibility:hidden}
+.kb.pad-strings{height:clamp(230px,42vh,360px);flex-direction:column;gap:4px;padding:0;background:transparent;box-shadow:none}
+.fb{position:relative;flex:1;border-radius:14px;background:#22160e;box-shadow:inset 0 0 0 2px var(--line)}
+.fb-guitar,.fb-ukulele{background:#4a2c16}
+.fb .str{position:absolute;top:12%;bottom:2%;background:#e9dcc2;transform:translateX(-50%)}
+.fb .nut{position:absolute;left:12%;right:2%;height:6px;background:#f4ead8;transform:translateY(-50%)}
+.fb .fret{position:absolute;left:12%;right:2%;height:3px;background:#b8b2a6;transform:translateY(-50%)}
+.fb .tape{position:absolute;left:12%;right:2%;height:2px;background:rgba(255,255,255,.22);transform:translateY(-50%)}
+.fb .sn{position:absolute;top:1%;transform:translateX(-50%);font:400 14px Bungee,sans-serif;color:var(--dim)}
+.fb .rl{position:absolute;left:6%;transform:translate(-50%,-50%);font-weight:800;font-size:13px;color:var(--dim)}
+.fd{position:absolute;width:42px;height:42px;transform:translate(-50%,-50%);border-radius:50%;background:var(--key);color:var(--keyink);font:400 16px Bungee,sans-serif;display:grid;place-items:center;box-shadow:0 3px 0 rgba(0,0,0,.45);z-index:1;padding:0}
+.fd.open{background:var(--bg2);color:var(--key);box-shadow:inset 0 0 0 3px var(--key)}
+.fd[disabled]{opacity:.2}
+.fd.hide{color:transparent!important}
+.fbnote{margin:0;font-size:13px;color:var(--dim);text-align:center}
+#pq .stage>svg{max-height:180px}
+/* skins */
+:root[data-skin=wood]{--bg:#5a3a22;--bg2:#3d2614;--panel:rgba(48,30,16,.92);--dim:#e6cfae;--line:rgba(255,236,200,.2)}
+:root[data-skin=party]{--bg:#1d1a4f;--bg2:#141238;--panel:rgba(20,18,56,.92);--dim:#cfcaf5;--line:rgba(255,255,255,.18)}
+.paint .wk:not([disabled]){background:color-mix(in srgb,var(--nc,#fbf6ec) 40%,#fbf6ec);box-shadow:inset 0 -12px 0 var(--nc,#ddd3bf)}
+.paint .sk:not([disabled]) .head{fill:var(--nc);stroke:#1d1a2e;stroke-width:1}
+.paint .sk:not([disabled]) span{color:color-mix(in srgb,var(--nc) 70%,#1d1a2e)}
+.paint .fd:not([disabled]):not(.open){background:var(--nc)}
+.paint .fd.open:not([disabled]){box-shadow:inset 0 0 0 4px var(--nc);color:var(--nc)}
+#skins{overflow-y:auto}
+.skingrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.skinb{border-radius:18px;background:var(--panel);border:3px solid var(--line);padding:10px;display:grid;gap:8px;font-weight:800;text-align:left}
+.skinb[aria-pressed=true]{border-color:var(--gold)}
+.skinb .sw{display:flex;height:44px;border-radius:10px;overflow:hidden}
+.skinb .sw i{flex:1}
+#paintBox[hidden]{display:none}
+.codein{width:6.2em;min-height:44px;border-radius:22px;border:2px solid var(--line);background:rgba(255,255,255,.08);color:var(--ink);font:400 20px Bungee,sans-serif;text-align:center;text-transform:uppercase;letter-spacing:.12em;padding:0 8px}
+.codein.clk{width:3.2em;letter-spacing:0;-moz-appearance:textfield}
+.codein.clk::-webkit-inner-spin-button,.codein.clk::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.code{font:400 30px Bungee,sans-serif;color:var(--gold);letter-spacing:.1em;margin-left:auto}
+#lobby{overflow-y:auto}
+.row[hidden]{display:none}
+#net .stage>svg{flex:1;min-height:0;max-height:150px;width:auto}
+.big.sm{font-size:40px}
+.lobset{margin-top:12px}
+.tag.wait{opacity:.6}
+.tbar{height:10px;border-radius:5px;background:rgba(255,255,255,.12);margin-top:10px;overflow:hidden}
+.tbar i{display:block;height:100%;width:0;background:var(--good)}
+.tbar i.low{background:var(--bad)}
+#net .stage{flex:1;min-height:90px}
+#netPad{flex:none;min-height:0}
+#netPad.grid{flex:1;margin-top:4px}
+#netPad .card[disabled]{cursor:default}
+#netPad .ib[disabled]{opacity:.55}
+#bkTray[hidden]{display:none}
+#bkTray .slots{max-width:320px}
+#padChips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%}
+#padChips::-webkit-scrollbar{display:none}
+#padChips .chip{flex:none}
+.notesw{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.notesw button{height:56px;border-radius:12px;font:400 15px Bungee,sans-serif;color:#1d1a2e;box-shadow:inset 0 -5px 0 rgba(0,0,0,.25)}
+.notesw button[aria-pressed=true]{outline:3px solid var(--ink);outline-offset:2px}
+.pal{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.pal button{aspect-ratio:1;border-radius:50%;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25),0 0 0 2px var(--line)}
+@media(max-height:640px){.art{min-height:80px}.gcard{gap:8px;padding:10px}.go{min-height:52px;font-size:20px}}
+@media(prefers-reduced-motion:reduce){.jump,.shake,.glow,.ib.glow,.fl,.flip,.face,.zap,.lunge,.wave,.card.turning{animation:none!important}.face{opacity:0}}
+</style>
+</head>
+<body>
+<svg id="scene" aria-hidden="true" preserveAspectRatio="xMidYMax slice" viewBox="0 0 400 800"></svg>
+<div class="app">
+
+  <section class="screen" id="title">
+    <h1 class="logo">Note Ninjas</h1>
+    <p class="sub">Train your ears, little ninja</p>
+    <div class="hero"><svg viewBox="0 0 200 230" role="img" aria-label="Ninja mascot"><use href="#ninja"/></svg></div>
+    <div class="panel">
+      <div class="row"><span class="lab">Who's training?</span>
+        <div class="chips" id="who"><button class="chip" data-p="Red Ninja">Red Ninja</button><button class="chip" data-p="Blue Ninja">Blue Ninja</button></div></div>
+      <button class="go" id="letsgo">Let's go</button>
+    </div>
+    <p class="credit">No sound? Turn the volume up and the silent switch off.<br>Instrument sounds: FluidR3 GM by Frank Wen, <a href="https://creativecommons.org/licenses/by/3.0/us/">CC BY 3.0</a></p>
+  </section>
+
+  <section class="screen" id="picker" hidden>
+    <div class="ptop">
+      <button class="who" id="whoBtn" aria-label="Change player"><i id="whoInit">R</i><span id="whoName">Red Ninja</span></button>
+      <span class="ptitle">Pick a game</span>
+      <button class="round" id="skinBtn" aria-label="Skins and colors"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0 0 18c1.4 0 2-1 2-2 0-1.5-1.2-1.6-1.2-2.8 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4c0-4.2-4-7.5-9-7.5z" fill="currentColor"/><circle cx="7.5" cy="11" r="1.6" fill="#ff4f7b"/><circle cx="10.5" cy="7" r="1.6" fill="#ffcc33"/><circle cx="15" cy="7.5" r="1.6" fill="#5fe39a"/></svg></button>
+      <button class="round" id="mute" aria-label="Music on or off"></button>
+    </div>
+    <div class="track" id="track">
+      <article class="gcard" style="--acc:var(--pink)" data-g="pq">
+        <div class="art"><svg viewBox="0 0 320 190" aria-hidden="true">
+          <g transform="translate(14 8) scale(.76)"><use href="#ninja"/></g>
+          <g transform="translate(168 104)"><rect x="-6" y="-6" width="148" height="80" rx="10" fill="#0a2c22"/>
+            <g fill="#fbf6ec"><rect x="0" y="0" width="16" height="68" rx="3"/><rect x="18" y="0" width="16" height="68" rx="3"/><rect x="36" y="0" width="16" height="68" rx="3"/><rect x="54" y="0" width="16" height="68" rx="3"/><rect x="72" y="0" width="16" height="68" rx="3"/><rect x="90" y="0" width="16" height="68" rx="3"/><rect x="108" y="0" width="16" height="68" rx="3"/><rect x="126" y="0" width="10" height="68" rx="3"/></g>
+            <g fill="#1d1a2e"><rect x="12" y="0" width="10" height="40" rx="2"/><rect x="30" y="0" width="10" height="40" rx="2"/><rect x="66" y="0" width="10" height="40" rx="2"/><rect x="84" y="0" width="10" height="40" rx="2"/><rect x="102" y="0" width="10" height="40" rx="2"/></g>
+            <rect x="72" y="0" width="16" height="68" rx="3" fill="#ff4f7b"/></g>
+          <g class="fl"><use href="#note" x="196" y="30" width="34" height="44"/></g>
+          <g class="fl b"><use href="#note" x="246" y="14" width="30" height="40"/></g>
+          <g class="fl c"><use href="#note" x="286" y="44" width="26" height="34"/></g>
+        </svg></div>
+        <h2 class="gname">Pitch Quest</h2>
+        <p class="gtag">Hear a note. Find the key.</p>
+        <div class="opts">
+          <div class="row"><span class="lab">Level</span><div class="stepper"><button data-step="pq" data-d="-1" aria-label="Level down">‹</button><output id="pqLv">Level 1</output><button data-step="pq" data-d="1" aria-label="Level up">›</button></div></div>
+          <div class="row"><span class="lab">Pad</span><div class="chips" id="padChips"><button class="chip" data-v="piano">Piano</button><button class="chip" data-v="staff">Staff</button><button class="chip" data-v="violin">Violin</button><button class="chip" data-v="guitar">Guitar</button><button class="chip" data-v="ukulele">Uke</button><button class="chip" data-v="cello">Cello</button></div></div>
+          <p class="best" id="pqInfo"></p>
+        </div>
+        <button class="go" data-play="pq">Play</button>
+      </article>
+
+      <article class="gcard" style="--acc:var(--violet)" data-g="sm">
+        <div class="art"><svg viewBox="0 0 320 190" aria-hidden="true">
+          <g transform="rotate(-12 95 100)"><use href="#cardback" x="60" y="40" width="72" height="104"/></g>
+          <g transform="rotate(12 225 100)"><use href="#cardback" x="188" y="40" width="72" height="104"/></g>
+          <g class="flip"><use href="#cardback" x="124" y="30" width="72" height="104"/><g class="face"><rect x="124" y="30" width="72" height="104" rx="12" fill="#ffcc33"/><use href="#wave" x="136" y="58" width="48" height="48"/></g></g>
+        </svg></div>
+        <h2 class="gname">Shadow Match</h2>
+        <p class="gtag">Flip cards. Match the sounds.</p>
+        <div class="opts">
+          <div class="row"><span class="lab">Players</span><div class="chips" data-set="smPlayers"><button class="chip" data-v="1">1</button><button class="chip" data-v="2">2</button></div></div>
+          <div class="row"><span class="lab">Size</span><div class="chips" data-set="smSize"><button class="chip" data-v="easy">Easy</button><button class="chip" data-v="normal">Normal</button><button class="chip" data-v="hard">Hard</button></div></div>
+          <p class="best" id="smInfo"></p>
+        </div>
+        <button class="go" data-play="sm">Play</button>
+      </article>
+
+      <article class="gcard" style="--acc:var(--orange)" data-g="ed">
+        <div class="art"><svg viewBox="0 0 320 190" aria-hidden="true">
+          <g class="lunge"><use href="#i-flute" x="14" y="30" width="130" height="130"/></g>
+          <g class="lunge r"><use href="#i-trumpet" x="176" y="30" width="130" height="130"/></g>
+          <g class="zap"><path d="M160 66l8 20 20 4-16 12 4 22-16-12-16 12 4-22-16-12 20-4z" fill="#ffcc33" stroke="#fff6cc" stroke-width="2"/></g>
+          <text x="160" y="178" text-anchor="middle" fill="#fdf6e3" font-family="Bungee,Impact,sans-serif" font-size="22">VS</text>
+        </svg></div>
+        <h2 class="gname">Ear Duel</h2>
+        <p class="gtag">Who's playing? Name the instrument.</p>
+        <div class="opts">
+          <div class="row"><span class="lab">Players</span><div class="chips" data-set="edPlayers"><button class="chip" data-v="1">1</button><button class="chip" data-v="2">2</button></div></div>
+          <div class="row"><span class="lab">Level</span><div class="stepper"><button data-step="ed" data-d="-1" aria-label="Level down">‹</button><output id="edLv">Level 1</output><button data-step="ed" data-d="1" aria-label="Level up">›</button></div></div>
+          <p class="best" id="edInfo"></p>
+        </div>
+        <button class="go" data-play="ed">Play</button>
+      </article>
+      <article class="gcard" style="--acc:#3fb7ff" data-g="net">
+        <div class="art"><svg viewBox="0 0 320 190" aria-hidden="true">
+          <g class="lunge"><rect x="40" y="30" width="78" height="136" rx="14" fill="#1d1a2e" stroke="#ff4f7b" stroke-width="4"/><rect x="50" y="46" width="58" height="96" rx="6" fill="#0d3b2e"/><use href="#note" x="62" y="66" width="34" height="44"/></g>
+          <g class="lunge r"><rect x="202" y="30" width="78" height="136" rx="14" fill="#1d1a2e" stroke="#3fb7ff" stroke-width="4"/><rect x="212" y="46" width="58" height="96" rx="6" fill="#0d3b2e"/><use href="#i-trumpet" x="216" y="70" width="50" height="50"/></g>
+          <g class="zap"><path d="M160 66l8 20 20 4-16 12 4 22-16-12-16 12 4-22-16-12 20-4z" fill="#ffcc33" stroke="#fff6cc" stroke-width="2"/></g>
+        </svg></div>
+        <h2 class="gname">Head-to-Head</h2>
+        <p class="gtag">Two phones, one room. Battle!</p>
+        <div class="opts">
+          <button class="go" data-net="create">Create a room</button>
+          <div class="row"><input class="codein" id="joinCode" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Room code"><button class="chip" data-net="join" style="--acc:#3fb7ff" aria-pressed="true">Join</button></div>
+        </div>
+      </article>
+    </div>
+    <div class="pnav"><button class="round" id="prev" aria-label="Previous game">‹</button><div class="dots" id="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><button class="round" id="next" aria-label="Next game">›</button></div>
+  </section>
+
+  <section class="screen" id="skins" hidden>
+    <div class="top"><button class="round" id="skinBack" aria-label="Back to games"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#homeIco"/></svg></button><span class="ptitle">Skins</span></div>
+    <div class="skingrid" id="skinGrid"></div>
+    <div class="panel" id="paintBox">
+      <span class="lab">Tap a note, then pick its color. Colors show on keys, staff, fingerboards and matched cards.</span>
+      <div class="notesw" id="noteSw"></div>
+      <div class="pal" id="pal"></div>
+      <button class="chip" id="rainbow">Reset to rainbow</button>
+    </div>
+  </section>
+
+  <section class="screen" id="lobby" hidden>
+    <div class="top"><button class="round" id="lobLeave" aria-label="Leave room"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#homeIco"/></svg></button><span class="ptitle">Room code</span><span class="code" id="lobCode">----</span></div>
+    <div class="sstat" id="lobPlayers"></div>
+    <div class="panel lobset">
+      <div class="row"><span class="lab">Game</span><div class="chips" data-nset="game"><button class="chip" data-v="pq">Pitch Quest</button><button class="chip" data-v="ed">Ear Duel</button><button class="chip" data-v="sm">Shadow Match</button><button class="chip" data-v="bk">Battle Keys</button></div></div>
+      <div class="row" id="lobStyleRow"><span class="lab">Style</span><div class="chips" data-nset="style"><button class="chip" data-v="race">Race</button><button class="chip" data-v="turns">Turns</button></div></div>
+      <div class="row" id="lobRoundsRow"><span class="lab">Rounds</span><div class="chips" data-nset="rounds"><button class="chip" data-v="5">5</button><button class="chip" data-v="10">10</button><button class="chip" data-v="15">15</button></div></div>
+      <div class="row" id="lobSizeRow"><span class="lab">Size</span><div class="chips" data-nset="size"><button class="chip" data-v="easy">Easy</button><button class="chip" data-v="normal">Normal</button><button class="chip" data-v="hard">Hard</button></div></div>
+      <div class="row"><span class="lab">Clock per turn</span><div class="stepper"><button data-clk="-1" aria-label="Less time">‹</button><input class="codein clk" id="lobClock" type="number" min="1" max="99" inputmode="numeric" aria-label="Seconds per turn"><span class="lab">s</span><button data-clk="1" aria-label="More time">›</button></div></div>
+      <p class="what" id="lobHelp"></p>
+    </div>
+    <button class="go" id="lobStart" style="--acc:#3fb7ff;margin-top:12px">Start</button>
+    <p class="hint" id="lobWait"></p>
+  </section>
+
+  <section class="screen" id="net" hidden>
+    <div class="top"><button class="round" id="netLeave" aria-label="Leave room"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#homeIco"/></svg></button><span class="pill" id="netGame" style="background:#3fb7ff;color:#fff"></span><span class="pill" id="netRound"></span><span class="score" id="netClock"></span></div>
+    <div class="sstat"><span class="tag" id="netMe"></span><span class="tag" id="netOpp"></span></div>
+    <div class="tbar"><i id="netTimer"></i></div>
+    <div class="stage"><svg viewBox="0 0 200 230" class="bounce" id="netNinja" aria-hidden="true"><use href="#ninja"/></svg><p class="say" id="netSay">Get ready…</p><button class="again" id="netAgain">Hear it again</button></div>
+    <div id="bkTray" hidden><div class="slots" id="bkDots"></div><div class="row" style="justify-content:center;margin:8px 0"><button class="chip" id="bkUndo">Undo</button><button class="chip" id="bkDone" aria-pressed="true" style="--acc:#3fb7ff">Done</button></div></div>
+    <div id="netPad"></div>
+  </section>
+
+  <section class="screen" id="pq" hidden>
+    <div class="top"><button class="round home" aria-label="Back to games"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#homeIco"/></svg></button><span class="pill" id="pqPill">Level 1</span><span class="score" id="pqScore">0</span></div>
+    <div class="meter"><div class="slots" id="pqSlots"></div><p class="hint" id="pqHint"></p></div>
+    <div class="stage">
+      <svg viewBox="0 0 200 230" class="bounce" id="pqNinja" aria-hidden="true"><use href="#ninja"/></svg>
+      <p class="say" id="pqSay" aria-live="polite">Listen…</p>
+      <button class="again" id="pqAgain">Hear it again</button>
+    </div>
+    <div class="kb" id="kb"></div>
+  </section>
+
+  <section class="screen" id="sm" hidden>
+    <div class="top"><button class="round home" aria-label="Back to games"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#homeIco"/></svg></button><span class="pill" style="background:var(--violet);color:#fff">Shadow Match</span><span class="score" id="smScore"></span></div>
+    <div class="sstat" id="smStat"></div>
+    <div class="grid" id="smGrid"></div>
+    <p class="hint">Cards only make a sound. Find the pairs by ear.</p>
+  </section>
+
+  <section class="screen" id="ed" hidden>
+    <div class="top"><button class="round home" aria-label="Back to games"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#homeIco"/></svg></button><span class="pill" id="edPill" style="background:var(--orange)">Level 1</span><span class="score" id="edScore">0</span></div>
+    <div class="meter"><div class="slots" id="edSlots"></div><p class="hint" id="edHint"></p></div>
+    <div class="stage">
+      <svg viewBox="0 0 200 230" class="bounce" id="edNinja" aria-hidden="true"><use href="#ninja"/></svg>
+      <p class="say" id="edSay" aria-live="polite">Listen…</p>
+      <button class="again" id="edAgain">Hear it again</button>
+    </div>
+    <div class="igrid" id="edGrid"></div>
+  </section>
+
+  <section class="screen" id="duel" hidden>
+    <div class="duel">
+      <div class="half top" id="h1"><p class="msg"></p><div class="igrid"></div><div class="row"><span class="nm"></span><span class="pts">0</span></div></div>
+      <div class="mid"><button class="round home" aria-label="Back to games"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#homeIco"/></svg></button><span class="pill" id="duelRound" style="background:var(--orange)">1/10</span><p class="say" id="duelSay">Listen…</p><button class="round" id="duelAgain" aria-label="Hear it again"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8a5 5 0 0 1 0 8" stroke="currentColor" stroke-width="2" fill="none"/></svg></button></div>
+      <div class="half" id="h0"><p class="msg"></p><div class="igrid"></div><div class="row"><span class="nm"></span><span class="pts">0</span></div></div>
+    </div>
+  </section>
+</div>
+
+<div class="over" id="over" hidden><div class="ocard">
+  <h2 id="ovTitle">Level Up!</h2>
+  <div class="big" id="ovBig"></div>
+  <p id="ovText"></p>
+  <button class="go" id="ovGo">Go!</button>
+  <button class="go alt" id="ovAlt" hidden>Back to games</button>
+</div></div>
+<div class="toast" id="toast" hidden></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="hood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a2f6b"/><stop offset="1" stop-color="#1d1740"/></linearGradient>
+    <path id="homeIco" d="M3 11 12 3l9 8v10h-6v-6H9v6H3z" fill="currentColor"/>
+    <g id="ninja">
+      <ellipse cx="100" cy="220" rx="58" ry="8" fill="#000" opacity=".3"/>
+      <path d="M150 62c20 4 34-6 44-16-4 16-18 30-40 30z" fill="#ff4f7b"/>
+      <path d="M150 70c16 10 30 10 42 4-8 12-24 18-42 10z" fill="#d93563"/>
+      <path d="M58 140c0-14 18-22 42-22s42 8 42 22v66c0 8-6 12-14 12H72c-8 0-14-4-14-12z" fill="url(#hood)"/>
+      <path d="M128 132c8 4 14 10 14 20v54c0 8-6 12-14 12h-6c8-2 10-6 10-12z" fill="#000" opacity=".22"/>
+      <rect x="58" y="168" width="84" height="12" fill="#ff4f7b"/>
+      <circle cx="54" cy="168" r="13" fill="#2b2357"/><circle cx="148" cy="160" r="13" fill="#2b2357"/>
+      <g transform="translate(160 140) rotate(15)"><path d="M0-22 6-6 22 0 6 6 0 22-6 6-22 0-6-6z" fill="#ffcc33" stroke="#b88a00" stroke-width="2"/><circle r="7" fill="#1d1a2e"/><path d="M-1 3V-5h5" stroke="#ffcc33" stroke-width="2.4" fill="none"/><circle cx="-3" cy="3" r="2.6" fill="#ffcc33"/></g>
+      <circle cx="100" cy="82" r="64" fill="url(#hood)"/>
+      <path d="M48 52a64 64 0 0 1 70-30" stroke="#6b5fb0" stroke-width="6" fill="none" stroke-linecap="round" opacity=".7"/>
+      <rect x="38" y="46" width="124" height="16" rx="6" fill="#ff4f7b"/>
+      <rect x="92" y="44" width="16" height="20" rx="3" fill="#ffcc33"/>
+      <rect x="50" y="72" width="100" height="38" rx="19" fill="#f6cfa8"/>
+      <rect x="50" y="98" width="100" height="12" rx="6" fill="#e3b089"/>
+      <path d="M64 76l26 6M136 76l-26 6" stroke="#1d1740" stroke-width="5" stroke-linecap="round"/>
+      <ellipse cx="80" cy="92" rx="8" ry="10" fill="#1d1a2e"/><ellipse cx="120" cy="92" rx="8" ry="10" fill="#1d1a2e"/>
+      <circle cx="83" cy="88" r="3" fill="#fff"/><circle cx="123" cy="88" r="3" fill="#fff"/>
+    </g>
+    <symbol id="note" viewBox="0 0 34 44"><ellipse cx="11" cy="35" rx="10" ry="7.5" transform="rotate(-20 11 35)" fill="#ffcc33"/><rect x="18" y="4" width="4" height="32" fill="#ffcc33"/><path d="M22 4c8 3 12 8 9 17 0-6-4-9-9-10z" fill="#ffcc33"/></symbol>
+    <symbol id="wave" viewBox="0 0 48 48"><g fill="#1d1a2e"><rect class="wave" x="4" y="16" width="6" height="16" rx="3"/><rect class="wave" x="14" y="8" width="6" height="32" rx="3" style="animation-delay:-.2s"/><rect class="wave" x="24" y="4" width="6" height="40" rx="3" style="animation-delay:-.4s"/><rect class="wave" x="34" y="12" width="6" height="24" rx="3" style="animation-delay:-.1s"/></g></symbol>
+    <symbol id="cardback" viewBox="0 0 72 104"><rect width="72" height="104" rx="12" fill="#2b2357"/><rect x="5" y="5" width="62" height="94" rx="9" fill="none" stroke="#8f7cff" stroke-width="2" opacity=".6"/><rect x="8" y="40" width="56" height="20" rx="10" fill="#1d1740"/><path d="M16 46l12 3M56 46l-12 3" stroke="#8f7cff" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="26" cy="52" rx="4" ry="5" fill="#ffcc33"/><ellipse cx="46" cy="52" rx="4" ry="5" fill="#ffcc33"/></symbol>
+    <symbol id="i-piano" viewBox="0 0 100 100"><path d="M14 20h72l4 20H10z" fill="#5a3826"/><path d="M10 40h80v32a6 6 0 0 1-6 6H16a6 6 0 0 1-6-6z" fill="#3a2418"/><rect x="16" y="46" width="68" height="22" rx="2" fill="#fbf6ec"/><path d="M25.7 46v22M35.4 46v22M45.1 46v22M54.8 46v22M64.5 46v22M74.2 46v22" stroke="#cfc5b2" stroke-width="1"/><g fill="#1d1a2e"><rect x="23.2" y="46" width="5" height="13"/><rect x="32.9" y="46" width="5" height="13"/><rect x="52.3" y="46" width="5" height="13"/><rect x="62" y="46" width="5" height="13"/><rect x="71.7" y="46" width="5" height="13"/></g><rect x="16" y="78" width="6" height="12" fill="#3a2418"/><rect x="78" y="78" width="6" height="12" fill="#3a2418"/></symbol>
+    <symbol id="i-flute" viewBox="0 0 100 100"><g transform="rotate(-35 50 50)"><rect x="4" y="45" width="92" height="10" rx="5" fill="#dfe4ea"/><rect x="4" y="50" width="92" height="5" rx="2.5" fill="#aab3bd"/><rect x="14" y="41" width="9" height="18" rx="3" fill="#c3cad3"/><circle cx="18.5" cy="50" r="2" fill="#5b6672"/><g fill="#7d8894"><circle cx="40" cy="50" r="3.2"/><circle cx="49" cy="50" r="3.2"/><circle cx="58" cy="50" r="3.2"/><circle cx="70" cy="50" r="3.2"/><circle cx="79" cy="50" r="3.2"/></g><rect x="90" y="44" width="5" height="12" rx="2" fill="#aab3bd"/></g></symbol>
+    <symbol id="i-trumpet" viewBox="0 0 100 100"><path d="M28 58h34a7 7 0 0 0 0-14" stroke="#c98a10" stroke-width="5" fill="none"/><path d="M18 46h48" stroke="#e8a920" stroke-width="7" stroke-linecap="round"/><path d="M64 44 92 28v38L64 50z" fill="#f5bd2e"/><ellipse cx="92" cy="47" rx="5" ry="19" fill="#c98a10"/><g fill="#d79a17"><rect x="34" y="30" width="6" height="20" rx="2"/><rect x="43" y="30" width="6" height="20" rx="2"/><rect x="52" y="30" width="6" height="20" rx="2"/></g><g fill="#fff2b8"><rect x="33" y="26" width="8" height="5" rx="2"/><rect x="42" y="26" width="8" height="5" rx="2"/><rect x="51" y="26" width="8" height="5" rx="2"/></g><rect x="7" y="43" width="12" height="6" rx="3" fill="#c98a10"/></symbol>
+    <symbol id="i-guitar" viewBox="0 0 100 100"><g transform="rotate(30 50 50)"><rect x="46" y="6" width="8" height="46" fill="#6b3d1f"/><rect x="43" y="0" width="14" height="12" rx="3" fill="#4a2a14"/><circle cx="50" cy="54" r="15" fill="#e8a25a"/><circle cx="50" cy="76" r="20" fill="#e8a25a"/><circle cx="50" cy="64" r="6" fill="#3b2416"/><rect x="42" y="82" width="16" height="4" rx="1" fill="#4a2a14"/><path d="M48 6v78M50 6v78M52 6v78" stroke="#f4ead8" stroke-width=".6"/></g></symbol>
+    <symbol id="i-violin" viewBox="0 0 100 100"><g transform="rotate(-25 50 50)"><path d="M50 30c-10 0-14 5-14 11 0 4 4 6 4 9s-6 5-6 12c0 9 7 14 16 14s16-5 16-14c0-7-6-9-6-12s4-5 4-9c0-6-4-11-14-11z" fill="#c0581f"/><rect x="47.5" y="6" width="5" height="30" fill="#1d1a2e"/><circle cx="50" cy="6" r="4" fill="#7a3510"/><path d="M44 50c-2 4 2 6 0 10M56 50c2 4-2 6 0 10" stroke="#3b1a08" stroke-width="1.6" fill="none"/><rect x="45" y="62" width="10" height="3" fill="#3b1a08"/><path d="M49 8v64M51 8v64" stroke="#f4ead8" stroke-width=".6"/></g></symbol>
+    <symbol id="i-cello" viewBox="0 0 100 100"><path d="M50 22c-14 0-18 7-18 15 0 6 5 8 5 12s-8 7-8 17c0 12 9 19 21 19s21-7 21-19c0-10-8-13-8-17s5-6 5-12c0-8-4-15-18-15z" fill="#8a3a14"/><rect x="47.5" y="2" width="5" height="26" fill="#1d1a2e"/><circle cx="50" cy="4" r="4" fill="#5a2208"/><path d="M42 46c-2 5 2 8 0 13M58 46c2 5-2 8 0 13" stroke="#2b1004" stroke-width="2" fill="none"/><rect x="44" y="64" width="12" height="3" fill="#2b1004"/><path d="M50 85v13" stroke="#9aa3ad" stroke-width="2.5"/><path d="M48 4v62M52 4v62" stroke="#f4ead8" stroke-width=".6"/></symbol>
+  </defs>
+</svg>
+
+<script>
+{
+/* ---------- data ---------- */
+const WHITE = ['C4','D4','E4','F4','G4','A4','B4','C5'];
+const BLACK = [1,2,4,5,6];
+const NAME = {C4:'C',D4:'D',E4:'E',F4:'F',G4:'G',A4:'A',B4:'B',C5:'high C',Db4:'C♯',Eb4:'D♯',Gb4:'F♯',Ab4:'G♯',Bb4:'A♯'};
+const BLACKS = ['Db4','Eb4','Gb4','Ab4','Bb4'];
+const PADS = {
+  piano:   {name:'Piano', sound:'piano'},
+  staff:   {name:'Staff', sound:'piano'},
+  violin:  {name:'Violin', sound:'violin', strings:['G','D','A','E'], rows:4, map:{C4:[0,3],D4:[1,0],E4:[1,1],F4:[1,2],G4:[1,3],A4:[2,0],B4:[2,1],C5:[2,2]}, note:'Violin, first position. Numbers are fingers, 0 is an open string.'},
+  guitar:  {name:'Guitar', sound:'guitar', frets:true, strings:['E','A','D','G','B','E'], rows:4, map:{C4:[1,3],D4:[2,0],E4:[2,2],F4:[2,3],G4:[3,0],A4:[3,2],B4:[4,0],C5:[4,1]}, note:'Guitar, first position. Numbers are frets. A real guitar sounds an octave lower than written.'},
+  ukulele: {name:'Ukulele', sound:'guitar', frets:true, strings:['G','C','E','A'], rows:4, map:{C4:[1,0],D4:[1,2],E4:[2,0],F4:[2,1],G4:[0,0],A4:[3,0],B4:[3,2],C5:[3,3]}, note:'Ukulele (G C E A). Numbers are frets. Plays a nylon guitar sound.'},
+  cello:   {name:'Cello', sound:'cello', octave:true, strings:['C','G','D','A'], rows:5, map:{C4:[1,4],D4:[2,0],E4:[2,1],F4:[2,2],G4:[2,4],A4:[3,0],B4:[3,1],C5:[3,2]}, note:'Cello, first position, one octave lower. Numbers are fingers.'}
+};
+const RAINBOW = {C4:'#ff4f4f',D4:'#ff9a3d',E4:'#ffd93d',F4:'#5fe39a',G4:'#3fd0c9',A4:'#3fa7ff',B4:'#9b7bff',C5:'#ff6fb5'};
+const PALETTE = ['#ff4f4f','#ff9a3d','#ffd93d','#8bd450','#5fe39a','#3fd0c9','#3fa7ff','#9b7bff','#ff6fb5','#a0522d','#ffffff','#7d8894'];
+const SKINS = {dojo:{name:'Dojo', sw:['#0d3b2e','#ff4f7b','#ffcc33']}, wood:{name:'Wood', sw:['#5a3a22','#e8b06a','#fbf6ec']}, party:{name:'Party', sw:['#1d1a4f','#ff4f7b','#5fe39a']}, paint:{name:'Paint Your Own', sw:Object.values(RAINBOW).slice(0,4)}};
+const LETTER = n => NAME[n] === 'high C' ? 'C' : NAME[n];
+const INST = {piano:'Piano', flute:'Flute', trumpet:'Trumpet', guitar:'Guitar', violin:'Violin', cello:'Cello'};
+const ALL6 = ['piano','flute','trumpet','guitar','violin','cello'];
+const LADDERS = {
+  pq: [
+    {notes:['C4','G4'], text:'C and G'},
+    {notes:['C4','E4','G4'], intro:'E4', text:'C, E, G'},
+    {notes:['C4','D4','E4','G4'], intro:'D4', text:'C, D, E, G'},
+    {notes:['C4','D4','E4','F4','G4'], intro:'F4', text:'C to G'},
+    {notes:['C4','D4','E4','F4','G4','A4'], intro:'A4', text:'C to A'},
+    {notes:['C4','D4','E4','F4','G4','A4','B4'], intro:'B4', text:'C to B'},
+    {notes:WHITE, intro:'C5', text:'The whole octave'},
+    {notes:WHITE, intro:'shadow', hide:true, text:'Whole octave, letters hidden'},
+    {notes:WHITE, intro:'mixed', hide:true, mixed:true, text:'Mixed instruments'},
+    {notes:[...WHITE,'Db4','Eb4','Gb4','Ab4','Bb4'], intro:'black', black:true, text:'Black keys (sharps), piano pad'},
+    {notes:WHITE, intro:'simon', hide:true, simon:2, text:'2-note patterns'},
+    {notes:WHITE, intro:'simon', hide:true, simon:3, text:'3-note patterns'},
+    {notes:WHITE, intro:'simon', hide:true, simon:4, text:'4-note patterns'}
+  ],
+  ed: [
+    {inst:['piano','flute','trumpet'], text:'Piano, flute, trumpet'},
+    {inst:['piano','flute','trumpet','guitar'], intro:'guitar', text:'Adds guitar'},
+    {inst:['piano','flute','trumpet','guitar','violin'], intro:'violin', text:'Adds violin'},
+    {inst:ALL6, intro:'cello', text:'Adds cello'},
+    {inst:ALL6, intro:'shadow', hide:true, shuffle:true, text:'All 6, names hidden, buttons shuffle'}
+  ]
+};
+const SM_SIZES = {easy:['C4','E4','G4','C5'], normal:['C4','D4','E4','G4','A4','C5'], hard:WHITE};
+const ED_NOTES = ['C4','E4','G4'];
+const WIN = 10, UP = 9, DOWN = 6, DUEL_ROUNDS = 10;
+const PCOL = {'Red Ninja':'#ff4f7b', 'Blue Ninja':'#3fb7ff'};
+const $ = id => document.getElementById(id);
+const rnd = a => a[Math.floor(Math.random()*a.length)];
+
+/* ---------- save ---------- */
+const mkP = () => ({pq:{level:0,window:[],best:0,pad:'piano'}, ed:{level:0,window:[],best:0}, sm:{easy:0,normal:0,hard:0}});
+let save = {v:2, who:'Red Ninja', mute:false, card:0, skin:'dojo', colors:{...RAINBOW}, smPlayers:'1', smSize:'easy', edPlayers:'1', players:{'Red Ninja':mkP(), 'Blue Ninja':mkP()}};
+function migrate(s){
+  const out = Object.assign({}, save, s);
+  out.players = {};
+  for(const name of ['Red Ninja','Blue Ninja']){
+    const o = (s.players||{})[name] || {}, p = mkP();
+    if(o.pq) p.pq = Object.assign(p.pq, o.pq); else if(o.level !== undefined) p.pq = {level:o.level||0, window:o.window||[], best:o.best||0};
+    if(o.ed) p.ed = Object.assign(p.ed, o.ed);
+    if(o.sm) p.sm = Object.assign(p.sm, o.sm);
+    if(!PADS[p.pq.pad]) p.pq.pad = 'piano';
+    p.pq.window = (p.pq.window||[]).slice(-WIN); p.ed.window = (p.ed.window||[]).slice(-WIN);
+    p.pq.level = Math.min(LADDERS.pq.length-1, Math.max(0, p.pq.level|0)); p.ed.level = Math.min(LADDERS.ed.length-1, Math.max(0, p.ed.level|0));
+    out.players[name] = p;
+  }
+  if(!out.players[out.who]) out.who = 'Red Ninja';
+  if(!SM_SIZES[out.smSize]) out.smSize = 'easy';
+  if(!['1','2'].includes(out.smPlayers)) out.smPlayers = '1';
+  if(!['1','2'].includes(out.edPlayers)) out.edPlayers = '1';
+  out.card = Math.min(3, Math.max(0, out.card|0)); out.netClock = Math.min(99, Math.max(1, out.netClock|0 || 5)); out.mute = !!out.mute;
+  if(!SKINS[out.skin]) out.skin = 'dojo';
+  out.colors = Object.assign({...RAINBOW}, out.colors || {});
+  out.v = 2; return out;
+}
+const STORE = () => location.search.includes('nnsess') ? sessionStorage : localStorage;
+const persist = () => { try { STORE().setItem('noteNinjas1', JSON.stringify(save)); } catch(e) {} };
+const P = () => save.players[save.who];
+const other = () => save.who === 'Red Ninja' ? 'Blue Ninja' : 'Red Ninja';
+
+/* ---------- timers ---------- */
+let timers = [];
+const later = (fn, ms) => { const t = setTimeout(() => { timers = timers.filter(x => x !== t); fn(); }, ms); timers.push(t); return t; };
+const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
+
+/* ---------- audio ---------- */
+let ctx = null, inBus, sfxBus, musicBus, chipFilter, buffers = {}, GAIN = {}, loaded = false;
+function b64(s){ const bin = atob(s), u = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u.buffer; }
+async function initAudio(){
+  if(!ctx){
+    ctx = new (window.AudioContext||window.webkitAudioContext)();
+    try{ if(navigator.audioSession) navigator.audioSession.type = 'playback'; }catch(e){}
+    inBus = ctx.createGain(); inBus.connect(ctx.destination);
+    chipFilter = ctx.createBiquadFilter(); chipFilter.type = 'lowpass'; chipFilter.frequency.value = 2600; chipFilter.connect(ctx.destination);
+    sfxBus = ctx.createGain(); sfxBus.connect(chipFilter);
+    musicBus = ctx.createGain(); musicBus.connect(sfxBus);
+    applyMute();
+  }
+  unlockIOS();
+  if(ctx.state !== 'running') await ctx.resume();
+  if(loaded) return;
+  const j = await (await fetch('samples.json')).json();
+  GAIN = j.gain;
+  const jobs = [];
+  for(const [inst, notes] of Object.entries(j.samples)) for(const [n, u] of Object.entries(notes))
+    jobs.push(new Promise((res, rej) => ctx.decodeAudioData(b64(u.split(',')[1]), b => { buffers[inst+':'+n] = b; res(); }, rej)));
+  await Promise.all(jobs);
+  loaded = true;
+}
+let voice = null;
+function playNote(inst, note){
+  const b = ctx && buffers[inst+':'+note]; if(!b) return;
+  if(ctx.state !== 'running') ctx.resume();
+  const t = ctx.currentTime, v = GAIN[inst] || 1;
+  if(voice){ const {g:og, s:os} = voice; og.gain.cancelScheduledValues(t); og.gain.setValueAtTime(og.gain.value, t); og.gain.linearRampToValueAtTime(0, t+.04); try{ os.stop(t+.05); }catch(e){} }
+  const s = ctx.createBufferSource(), g = ctx.createGain();
+  s.buffer = b; g.gain.setValueAtTime(v,t); g.gain.setValueAtTime(v,t+1.3); g.gain.linearRampToValueAtTime(0,t+1.9);
+  s.connect(g).connect(inBus); s.start(t); s.stop(t+2);
+  voice = {s, g};
+}
+let silentEl = null;
+function unlockIOS(){
+  if(silentEl) return;
+  try {
+    const sr = 8000, n = sr/2, buf = new ArrayBuffer(44 + n*2), d = new DataView(buf);
+    const w = (o, str) => [...str].forEach((c,i) => d.setUint8(o+i, c.charCodeAt(0)));
+    w(0,'RIFF'); d.setUint32(4, 36+n*2, true); w(8,'WAVEfmt '); d.setUint32(16,16,true); d.setUint16(20,1,true); d.setUint16(22,1,true);
+    d.setUint32(24,sr,true); d.setUint32(28,sr*2,true); d.setUint16(32,2,true); d.setUint16(34,16,true); w(36,'data'); d.setUint32(40,n*2,true);
+    silentEl = new Audio(URL.createObjectURL(new Blob([buf], {type:'audio/wav'})));
+    silentEl.loop = true; silentEl.setAttribute('playsinline',''); silentEl.play().catch(() => {});
+  } catch(e) {}
+}
+const hz = m => 440 * 2 ** ((m-69)/12);
+function chip(m, t, dur, type='square', vol=.05, bus=sfxBus){
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type; o.frequency.value = hz(m);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t+.008); g.gain.exponentialRampToValueAtTime(vol*.5, t+dur*.7); g.gain.linearRampToValueAtTime(0, t+dur);
+  o.connect(g).connect(bus); o.start(t); o.stop(t+dur+.02);
+}
+let noiseBuf = null;
+function noise(t, dur, vol, bus=sfxBus){
+  if(!noiseBuf){ noiseBuf = ctx.createBuffer(1, ctx.sampleRate*.2, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i] = Math.random()*2-1; }
+  const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+  s.buffer = noiseBuf; f.type = 'highpass'; f.frequency.value = 6000;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t+dur);
+  s.connect(f).connect(g).connect(bus); s.start(t); s.stop(t+dur);
+}
+function kick(t, bus){
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(45, t+.12);
+  g.gain.setValueAtTime(.16, t); g.gain.exponentialRampToValueAtTime(.001, t+.16);
+  o.connect(g).connect(bus); o.start(t); o.stop(t+.18);
+}
+function seq(notes, step, type='square', vol=.05){ if(!ctx) return; const t = ctx.currentTime + .03; notes.forEach((m,i) => { if(m) chip(m, t+i*step, step*1.6, type, vol); }); }
+const SFX = {
+  pq:   () => seq([60,64,67,72,76], .07),
+  sm:   () => seq([69,72,76,75], .12, 'triangle', .09),
+  ed:   () => { seq([67,null,71,79], .08); if(ctx) noise(ctx.currentTime+.03, .12, .05); },
+  up:   () => seq([72,76,79,84,null,84], .09),
+  ding: () => seq([84,88], .06, 'square', .03),
+  match:() => seq([76,83], .08, 'triangle', .08),
+  win:  () => seq([67,72,76,79,null,76,79,84], .1),
+  net:  () => { seq([60,67,72,79,84], .06); if(ctx) noise(ctx.currentTime+.35, .1, .04); }
+};
+function applyMute(){
+  if(sfxBus) sfxBus.gain.value = save.mute ? 0 : 1;
+  $('mute').innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/>${save.mute ? '<path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="2"/>' : '<path d="M16 8a5 5 0 0 1 0 8M18.5 5.5a8.5 8.5 0 0 1 0 13" stroke="currentColor" stroke-width="2" fill="none"/>'}</svg>`;
+  $('mute').setAttribute('aria-pressed', !save.mute);
+}
+
+/* ---------- original chiptune loop (picker only, never during listening games) ---------- */
+const SONG = {
+  bpm: 116,
+  lead: [76,79,81,79,76,0,74,76, 79,0,76,74,72,0,0,0, 69,72,74,76,79,76,74,72, 74,0,0,76,74,0,0,0,
+         76,79,81,84,81,79,76,79, 81,0,79,76,74,0,76,0, 72,74,76,79,81,79,76,74, 72,0,0,0,0,0,0,0],
+  roots: [48,48,45,43,48,41,43,48]
+};
+const music = {on:false, step:0, next:0, timer:0};
+function startMusic(){
+  if(music.on || !ctx || !loaded || save.mute) return;
+  music.on = true; music.step = 0; music.next = ctx.currentTime + .15;
+  musicBus.gain.cancelScheduledValues(ctx.currentTime); musicBus.gain.setValueAtTime(1, ctx.currentTime);
+  music.timer = setInterval(tick, 40);
+}
+function tick(){
+  const e = 60 / SONG.bpm / 2;
+  while(music.next < ctx.currentTime + .25){
+    const i = music.step % 64, t = music.next, root = SONG.roots[Math.floor(i/8)];
+    if(SONG.lead[i]) chip(SONG.lead[i], t, e*.9, 'square', .028, musicBus);
+    chip(root + (i%2 ? 12 : 0), t, e*.8, 'triangle', .07, musicBus);
+    if(i%4 === 2) chip(root + 19, t, e*.5, 'square', .012, musicBus);
+    if(i%2) noise(t, .03, .012, musicBus);
+    if(i%4 === 0) kick(t, musicBus);
+    music.next += e; music.step++;
+  }
+}
+function stopMusic(){
+  if(!music.on) return;
+  clearInterval(music.timer); music.on = false;
+  const t = ctx.currentTime; musicBus.gain.cancelScheduledValues(t); musicBus.gain.setValueAtTime(musicBus.gain.value, t); musicBus.gain.linearRampToValueAtTime(0, t+.12);
+}
+function duck(){ if(!music.on) return; const t = ctx.currentTime; musicBus.gain.cancelScheduledValues(t); musicBus.gain.setValueAtTime(.25, t); musicBus.gain.linearRampToValueAtTime(1, t+1.1); }
+
+/* ---------- scene + screens ---------- */
+function scene(){
+  let seed = 7; const r = () => (seed = seed*16807 % 2147483647)/2147483647;
+  let out = '';
+  if(save.skin === 'wood'){
+    out = '<defs><radialGradient id="lamp" cx=".5" cy=".12" r=".7"><stop offset="0" stop-color="#ffcf8a" stop-opacity=".35"/><stop offset="1" stop-color="#ffcf8a" stop-opacity="0"/></radialGradient></defs>';
+    const tones = ['#5e3c22','#694328','#553520','#62402a'];
+    for(let x=0, k=0; x<400; x+=46, k++){
+      out += `<rect x="${x}" y="0" width="46" height="800" fill="${tones[k%4]}"/><rect x="${x+45}" y="0" width="1.5" height="800" fill="#2e1c10" opacity=".6"/>`;
+      for(let g=0; g<5; g++){ const gx = x + 6 + r()*34, w = (r()-.5)*14; out += `<path d="M${gx} 0 C${gx+w} 200 ${gx-w} 400 ${gx+w/2} 600 S${gx} 800 ${gx} 800" stroke="#3a2414" stroke-width="${.8+r()*1.4}" fill="none" opacity=".3"/>`; }
+      if(r() < .5){ const ky = 80 + r()*640; out += `<ellipse cx="${x+23}" cy="${ky}" rx="6" ry="11" fill="#3a2414" opacity=".35"/>`; }
+    }
+    out += '<rect width="400" height="800" fill="url(#lamp)"/>';
+  } else if(save.skin === 'party'){
+    out = '<rect width="400" height="800" fill="#1d1a4f"/>';
+    const cols = ['#ff4f7b','#ffcc33','#5fe39a','#3fb7ff','#ff8a3d','#ffffff'];
+    out += [[10,0,'#ff4f7b'],[0,40,'#ffcc33'],[0,80,'#3fb7ff']].map(([dx,y,c]) => `<path d="M-10 ${y+30} Q60 ${y+70} 130 ${y+30} T270 ${y+30} T410 ${y+30}" stroke="${c}" stroke-width="7" fill="none" opacity=".55"/>`).join('');
+    for(let i=0;i<130;i++){ const x = r()*400, y = 120 + r()*680; out += `<rect x="${x}" y="${y}" width="${5+r()*5}" height="${3+r()*4}" fill="${cols[i%cols.length]}" opacity=".55" transform="rotate(${r()*180} ${x} ${y})"/>`; }
+    [[52,300,'#ff4f7b'],[352,450,'#ffcc33'],[70,640,'#3fb7ff'],[340,690,'#5fe39a']].forEach(([x,y,c]) => {
+      out += `<path d="M${x} ${y+34} q-8 30 4 60 q10 30-2 60" stroke="#cfcaf5" stroke-width="1.5" fill="none" opacity=".6"/><ellipse cx="${x}" cy="${y}" rx="26" ry="32" fill="${c}" opacity=".85"/><ellipse cx="${x-9}" cy="${y-12}" rx="6" ry="9" fill="#fff" opacity=".35"/><path d="M${x-4} ${y+31}h8l-4 6z" fill="${c}"/>`;
+    });
+  } else {
+    out = '<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a2c22"/><stop offset="1" stop-color="#14523f"/></linearGradient></defs><rect width="400" height="800" fill="url(#sky)"/><circle cx="78" cy="300" r="46" fill="#ffe9a8" opacity=".85"/><circle cx="64" cy="288" r="46" fill="#0f3d2e" opacity=".18"/>';
+    for(let layer=0; layer<3; layer++){
+      const col = ['#164f3d','#0f4031','#0a3226'][layer];
+      for(let i=0;i<9;i++){
+        const x = r()*420-10, w = 8+layer*4+r()*5, lean = (r()-.5)*30;
+        out += `<path d="M${x} 820 Q${x+lean/2} 500 ${x+lean} ${120+r()*200}" stroke="${col}" stroke-width="${w}" fill="none"/>`;
+        for(let k=0;k<5;k++){ const y = 760-k*110-r()*30; out += `<rect x="${x+lean*(1-y/820)-w/2}" y="${y}" width="${w}" height="3" fill="#000" opacity=".25"/>`; }
+      }
+    }
+    if(save.skin === 'paint') WHITE.forEach((n,i) => { const x = i % 2 ? 330 + r()*50 : 20 + r()*50, y = 120 + i*80 + r()*40; out += `<g fill="${noteColor(n)}" opacity=".45"><circle cx="${x}" cy="${y}" r="${14+r()*10}"/><circle cx="${x+18}" cy="${y-12}" r="5"/><circle cx="${x-16}" cy="${y+14}" r="4"/></g>`; });
+  }
+  $('scene').innerHTML = out;
+}
+function show(id){
+  clearTimers();
+  document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id);
+  $('over').hidden = true; $('toast').hidden = true;
+  if(id === 'picker'){ paintPicker(); goCard(save.card, false); startMusic(); } else stopMusic();
+  document.body.style.pointerEvents = 'none'; setTimeout(() => document.body.style.pointerEvents = '', 350);
+}
+
+/* ---------- skins ---------- */
+let skinSel = 'C4';
+function applySkin(){
+  const r = document.documentElement; r.dataset.skin = save.skin; r.classList.toggle('paint', save.skin === 'paint');
+  scene(); pq.built = '';
+}
+function paintSkins(){
+  $('skinGrid').innerHTML = Object.entries(SKINS).map(([k,v]) => `<button class="skinb" data-v="${k}" aria-pressed="${k === save.skin}"><span class="sw">${(k === 'paint' ? WHITE.slice(0,6).map(noteColor) : v.sw).map(c => `<i style="background:${c}"></i>`).join('')}</span>${v.name}</button>`).join('');
+  $('paintBox').hidden = save.skin !== 'paint';
+  $('noteSw').innerHTML = WHITE.map(n => `<button data-n="${n}" aria-pressed="${n === skinSel}" aria-label="${NAME[n]}" style="background:${noteColor(n)}">${n === 'C5' ? 'Hi' : LETTER(n)}</button>`).join('');
+  $('pal').innerHTML = PALETTE.map(c => `<button data-c="${c}" aria-label="Color ${c}" style="background:${c}"></button>`).join('');
+}
+
+/* ---------- overlay ---------- */
+let ovGo = null, ovAlt = null;
+function overlay({title, big='', text='', go='Go!', onGo, alt, onAlt}){
+  $('ovTitle').textContent = title; $('ovBig').innerHTML = big; $('ovText').textContent = text;
+  $('ovGo').textContent = go; ovGo = onGo;
+  $('ovAlt').hidden = !alt; if(alt){ $('ovAlt').textContent = alt; ovAlt = onAlt; }
+  $('over').hidden = false; $('ovGo').disabled = false; $('ovGo').focus();
+}
+function toast(t, ms=2400){ const el = $('toast'); el.textContent = t; el.hidden = false; later(() => el.hidden = true, ms); }
+const icon = i => `<svg viewBox="0 0 100 100"><use href="#i-${i}"/></svg>`;
+
+/* ---------- leveling (shared by Pitch Quest and Ear Duel solo) ---------- */
+function record(mode, ok){
+  const s = P()[mode]; s.window = [...s.window, ok].slice(-WIN);
+  if(s.window.length < WIN) return null;
+  const n = s.window.filter(Boolean).length, top = LADDERS[mode].length - 1;
+  if(n >= UP && s.level < top){ s.level++; s.window = []; return 'up'; }
+  if(n < DOWN && s.level > 0){ s.level--; s.window = []; return 'down'; }
+  return null;
+}
+function paintMeter(mode){
+  const s = P()[mode], n = s.window.filter(Boolean).length, top = s.level === LADDERS[mode].length-1;
+  $(mode+'Slots').innerHTML = Array.from({length:WIN}, (_,i) => `<span class="slot ${i<s.window.length?(s.window[i]?'ok':'no'):''}"></span>`).join('');
+  $(mode+'Hint').textContent = top ? `${n} of last ${s.window.length} right · top level, Ninja Master!` : `${n} of last ${s.window.length} right · get ${UP} of ${WIN} to level up`;
+  $(mode+'Pill').textContent = 'Level ' + (s.level+1);
+}
+function levelUpCard(mode, next){
+  const L = LADDERS[mode][P()[mode].level];
+  SFX.up();
+  const go = $('ovGo'); later(() => { go.disabled = false; go.textContent = 'Go!'; }, L.intro === 'shadow' ? 600 : (mode === 'pq' ? (L.simon ? 900 + L.simon*700 : 2400) : 2900));
+  if(L.intro === 'shadow'){
+    overlay({title:'Level Up!', big:'?', text: mode === 'pq' ? 'Shadow keys! The letters are hiding now. Trust your ears.' : 'Shadow duel! Names hide and the buttons shuffle every round. Trust your ears.', onGo:next});
+  } else if(mode === 'pq' && L.intro === 'mixed'){
+    overlay({title:'Level Up!', big:icon('violin'), text:'Mixed instruments! Any instrument can play the note now. Listen for the pitch, not the sound.', onGo:next});
+    [['flute','G4'],['violin','G4'],['trumpet','G4']].forEach(([i,n],k) => later(() => playNote(i, n), 700+k*700));
+  } else if(mode === 'pq' && L.intro === 'black'){
+    overlay({title:'Level Up!', big:'♯', text:'Black keys! A sharp (♯) is the black key just above a white key. C♯ sits between C and D.', onGo:next});
+    [['C4',0],['Db4',800],['D4',1600]].forEach(([n,d]) => later(() => playNote('piano', n), 700+d));
+  } else if(mode === 'pq' && L.intro === 'simon'){
+    overlay({title:'Level Up!', big:String(L.simon), text:`Ninja patterns! Listen to ${L.simon} notes, then tap them in the same order.`, onGo:next});
+    ['C4','E4','G4','C5'].slice(0, L.simon).forEach((n,k) => later(() => playNote('piano', n), 700+k*700));
+  } else if(mode === 'pq'){
+    overlay({title:'Level Up!', big:LETTER(L.intro), text:`New note: ${NAME[L.intro]}! Listen to it, then find it on the pad.`, onGo:next});
+    [0,900].forEach(d => later(() => playPad(L.intro), 700+d));
+  } else {
+    overlay({title:'Level Up!', big:icon(L.intro), text:`New instrument: ${INST[L.intro]}! Listen to how it sounds.`, onGo:next});
+    ['C4','G4'].forEach((n,i) => later(() => playNote(L.intro, n), 700+i*1100));
+  }
+  $('ovGo').disabled = true; $('ovGo').textContent = 'Listen…';
+}
+
+/* ---------- picker ---------- */
+let activeCard = -1, stungCard = -1;
+function paintPicker(){
+  const p = P();
+  $('whoName').textContent = save.who; $('whoInit').textContent = save.who[0]; $('whoInit').style.background = PCOL[save.who];
+  $('pqLv').textContent = 'Level ' + (p.pq.level+1);
+  $('pqInfo').textContent = `${LADDERS.pq[p.pq.level].text} · Best score ${p.pq.best}`;
+  document.querySelectorAll('#padChips .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.v === p.pq.pad));
+  $('edLv').textContent = 'Level ' + (p.ed.level+1);
+  $('edInfo').textContent = save.edPlayers === '2' ? `${save.who} vs ${other()} · ${DUEL_ROUNDS} rounds · ${LADDERS.ed[p.ed.level].text}` : `${LADDERS.ed[p.ed.level].text} · Best score ${p.ed.best}`;
+  const b = p.sm[save.smSize];
+  $('smInfo').textContent = save.smPlayers === '2' ? `${save.who} vs ${other()} · take turns` : (b ? `Best: ${b} turns on ${save.smSize}` : `${SM_SIZES[save.smSize].length} pairs · fewest turns wins`);
+  document.querySelectorAll('[data-set]').forEach(g => g.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.v === save[g.dataset.set])));
+}
+function goCard(i, smooth=true){
+  const cards = $('track').children; i = Math.max(0, Math.min(cards.length-1, i));
+  $('track').scrollTo({left: cards[i].offsetLeft - $('track').offsetLeft - 16, behavior: smooth ? 'smooth' : 'auto'});
+}
+function setActive(i){
+  if(i === activeCard) return;
+  activeCard = i; save.card = i; persist();
+  [...$('track').children].forEach((c,k) => c.classList.toggle('on', k === i));
+  [...$('dots').children].forEach((d,k) => d.classList.toggle('on', k === i));
+  if(!$('picker').hidden && i !== stungCard && loaded){ stungCard = i; duck(); SFX[$('track').children[i].dataset.g](); }
+}
+
+/* ---------- Pitch Quest ---------- */
+const pq = {q:null, score:0, last:[], introLeft:0, built:''};
+const STAFF_Y = {C4:80, D4:75, E4:70, F4:65, G4:60, A4:55, B4:50, C5:45};
+const MIX = ['piano','flute','violin','trumpet','guitar','cello'];
+function pqLevel(){ return LADDERS.pq[P().pq.level]; }
+function pqPad(){ return pqLevel().black ? 'piano' : (PADS[P().pq.pad] ? P().pq.pad : 'piano'); }
+const down8 = n => n.replace(/\d/, d => d - 1);
+function playPad(n){ const pd = PADS[pqPad()]; playNote(pd.sound, pd.octave ? down8(n) : n); }
+function noteColor(n){ return save.colors[n] || '#ffffff'; }
+function pianoPad(){
+  return WHITE.map(n => `<button class="wk pk" data-n="${n}" aria-label="${NAME[n]}">${LETTER(n)}</button>`).join('')
+    + BLACKS.map((n,k) => `<button class="bk pk" data-n="${n}" aria-label="${NAME[n]}" style="left:calc(6px + ${BLACK[k]}*(100% - 12px)/8 - 3.5%)">${NAME[n]}</button>`).join('');
+}
+function staffPad(){
+  const lines = [30,40,50,60,70].map(y => `<line x1="0" x2="40" y1="${y}" y2="${y}"/>`).join('');
+  const clef = `<div class="clef"><svg viewBox="8 18 24 78" aria-hidden="true"><g stroke="#1d1a2e" stroke-width="1.2">${lines}</g><path transform="translate(1 6) scale(.95)" d="M21 90c-6 2-9-4-4-6 5-1 6 5 1 7M20 92 23 22c1-7-6-7-5 1 1 10 12 17 10 31-1 10-15 10-15 0 0-7 10-9 12-2" fill="none" stroke="#1d1a2e" stroke-width="2" stroke-linecap="round"/></svg></div>`;
+  return clef + WHITE.map(n => {
+    const y = STAFF_Y[n], up = y > 50;
+    const stem = up ? `<line class="nl" x1="27.4" x2="27.4" y1="${y-1}" y2="${y-32}" stroke="#1d1a2e" stroke-width="1.8"/>` : `<line class="nl" x1="12.6" x2="12.6" y1="${y+1}" y2="${y+32}" stroke="#1d1a2e" stroke-width="1.8"/>`;
+    const ledger = n === 'C4' ? '<line class="nl" x1="8" x2="32" y1="80" y2="80" stroke="#1d1a2e" stroke-width="1.6"/>' : '';
+    return `<button class="sk pk" data-n="${n}" aria-label="${NAME[n]}"><svg viewBox="8 18 24 78" aria-hidden="true"><g stroke="#1d1a2e" stroke-width="1.2">${lines}</g>${ledger}<ellipse class="head" cx="20" cy="${y}" rx="7.6" ry="5.6" transform="rotate(-20 20 ${y})" fill="#1d1a2e"/>${stem}</svg><span>${LETTER(n)}</span></button>`;
+  }).join('');
+}
+function stringPad(id){
+  const pd = PADS[id], n = pd.strings.length, R = pd.rows;
+  const sx = i => 16 + (i + .5) * (82 / n);
+  const ry = r => r === 0 ? 15 : 26 + (r - .5) * (74 / (R - 1));
+  let h = `<div class="fb fb-${id}">`;
+  pd.strings.forEach((s,i) => { h += `<span class="sn" style="left:${sx(i)}%">${s}</span><span class="str" style="left:${sx(i)}%;width:${pd.frets ? 1.5 + (n-1-i)*.5 : 1.5 + (n-1-i)*.6}px"></span>`; });
+  h += `<span class="nut" style="top:26%"></span>`;
+  for(let r=1; r<R; r++){
+    if(pd.frets) h += `<span class="fret" style="top:${26 + r * (74/(R-1))}%"></span>`;
+    else h += `<span class="tape" style="top:${ry(r)}%"></span>`;
+    h += `<span class="rl" style="top:${ry(r)}%">${r}</span>`;
+  }
+  h += `<span class="rl" style="top:${ry(0)}%">0</span>`;
+  for(const note of WHITE){
+    const [s, r] = pd.map[note];
+    h += `<button class="fd pk${r === 0 ? ' open' : ''}" data-n="${note}" aria-label="${NAME[note]}" style="left:${sx(s)}%;top:${ry(r)}%">${note === 'C5' ? 'C' : LETTER(note)}</button>`;
+  }
+  return h + `</div><p class="fbnote">${pd.note}</p>`;
+}
+function buildPad(){
+  const id = pqPad();
+  if(pq.built === id) return;
+  pq.built = id;
+  const kb = $('kb');
+  kb.className = 'kb pad-' + (PADS[id].strings ? 'strings' : id);
+  kb.innerHTML = id === 'piano' ? pianoPad() : id === 'staff' ? staffPad() : stringPad(id);
+}
+function pqPaint(){
+  buildPad();
+  const L = pqLevel(), paint = save.skin === 'paint';
+  document.querySelectorAll('#kb .pk').forEach(k => {
+    k.disabled = !L.notes.includes(k.dataset.n);
+    k.classList.toggle('hide', !!L.hide);
+    if(paint && WHITE.includes(k.dataset.n)) k.style.setProperty('--nc', noteColor(k.dataset.n)); else k.style.removeProperty('--nc');
+  });
+  paintMeter('pq'); $('pqScore').textContent = pq.score;
+}
+function say(id, t, cls=''){ const s = $(id); s.textContent = t; s.className = 'say ' + cls; }
+function bounce(el, cls){ el.classList.remove('jump','shake'); void el.getBoundingClientRect(); el.classList.add(cls); }
+function pqPickNote(L){
+  if(pq.introLeft > 0){ pq.introLeft--; if(WHITE.includes(L.intro) && Math.random() < .4) return L.intro; }
+  if(L.black && Math.random() < .4) return rnd(BLACKS);
+  const pool = L.black ? WHITE : L.notes;
+  let n; do { n = rnd(pool); } while(pq.last.length > 1 && pq.last[0] === n && pq.last[1] === n);
+  return n;
+}
+function pqNext(){
+  pqPaint();
+  document.querySelectorAll('#kb .pk').forEach(k => k.classList.remove('right','wrong','glow','press'));
+  const L = pqLevel(), pd = PADS[pqPad()];
+  const q = {t0:0, done:false, pos:0};
+  if(L.simon){ q.seq = []; for(let i=0;i<L.simon;i++){ let n; do { n = rnd(L.notes); } while(n === q.seq[i-1]); q.seq.push(n); } q.note = q.seq[0]; }
+  else q.note = pqPickNote(L);
+  q.inst = L.mixed ? rnd(MIX) : pd.sound;
+  q.shift = !!pd.octave && (!L.mixed || q.inst === 'cello');
+  pq.q = q;
+  pq.last = [q.note, ...pq.last].slice(0,2);
+  say('pqSay', 'Listen…');
+  later(() => pqPlayQ(q, () => { if(pq.q === q){ q.t0 = performance.now(); say('pqSay', L.simon ? `Tap the ${L.simon} notes in order` : 'Which note?'); } }), 550);
+}
+function pqPlayQ(q, then, glow){
+  const notes = q.seq || [q.note], gap = 700;
+  notes.forEach((n,i) => later(() => {
+    playNote(q.inst, q.shift ? down8(n) : n);
+    if(glow){ const k = document.querySelector(`#kb .pk[data-n="${n}"]`); if(k){ k.classList.remove('glow','wrong'); void k.offsetWidth; k.classList.add('glow'); } }
+  }, i * gap));
+  if(then) later(then, (notes.length - 1) * gap + 60);
+}
+function pqAnswer(key){
+  const n = key.dataset.n, q = pq.q; if(!q || q.done || !q.t0) return;
+  playPad(n);
+  key.classList.add('press'); setTimeout(() => key.classList.remove('press'), 150);
+  if(q.seq){
+    if(n !== q.seq[q.pos]) return pqFinish(false, key);
+    q.pos++;
+    if(q.pos < q.seq.length){ key.classList.add('right'); setTimeout(() => { if(!q.done) key.classList.remove('right'); }, 260); return; }
+  }
+  pqFinish(q.seq ? true : n === q.note, key);
+}
+function pqFinish(ok, key){
+  const q = pq.q, s = P().pq, names = (q.seq || [q.note]).map(n => NAME[n]).join(' ');
+  q.done = true;
+  if(ok){
+    pq.score += (100 + Math.max(0, Math.round(50 - (performance.now()-q.t0)/100))) * (q.seq ? q.seq.length : 1);
+    s.best = Math.max(s.best, pq.score);
+    key.classList.add('right'); say('pqSay', 'Yes! ' + names, 'ok'); bounce($('pqNinja'), 'jump');
+  } else {
+    key.classList.add('wrong'); say('pqSay', (q.seq ? 'It was ' : 'That was ') + names, 'no'); bounce($('pqNinja'), 'shake');
+    later(() => pqPlayQ(q, null, true), 650);
+  }
+  const ch = record('pq', ok); persist(); paintMeter('pq'); $('pqScore').textContent = pq.score;
+  const wait = ok ? 1100 : 1700 + (q.seq ? q.seq.length : 1) * 700;
+  later(() => {
+    if(ch === 'up'){ pq.introLeft = 10; levelUpCard('pq', pqNext); }
+    else if(ch === 'down'){ toast(`Back to level ${s.level+1} for some practice`); later(pqNext, 2400); }
+    else pqNext();
+  }, wait);
+}
+function startPq(){ pq.score = 0; pq.last = []; pq.introLeft = 0; pq.built = ''; show('pq'); pqNext(); }
+
+/* ---------- Shadow Match ---------- */
+let sm = null, smFirst = 0;
+function startSm(rematch){
+  smFirst = rematch === true ? 1 - smFirst : 0;
+  const notes = SM_SIZES[save.smSize];
+  const deck = [...notes, ...notes].map(n => ({note:n, done:false, owner:null}));
+  for(let i=deck.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [deck[i],deck[j]] = [deck[j],deck[i]]; }
+  const two = save.smPlayers === '2';
+  sm = {deck, open:[], lock:false, turns:0, pairs:0, players: two ? [save.who, other()] : [save.who], scores:[0,0], cur: two ? smFirst : 0};
+  show('sm');
+  $('smGrid').style.gridTemplateRows = `repeat(${deck.length/4},minmax(0,1fr))`;
+  $('smGrid').innerHTML = deck.map((c,i) => `<button class="card" data-i="${i}" aria-label="Card ${i+1}"></button>`).join('');
+  sm.deck.forEach((_,i) => smCard(i));
+  smStat();
+}
+function smCard(i, turn=false){
+  const c = sm.deck[i], el = $('smGrid').children[i], up = sm.open.includes(i);
+  el.className = 'card' + (c.done ? ' done' : up ? ' up' : '') + (turn ? ' turning' : '');
+  el.style.setProperty('--pc', !c.done ? '' : sm.players.length > 1 ? PCOL[sm.players[c.owner]] : save.skin === 'paint' ? noteColor(c.note) : '');
+  el.innerHTML = c.done ? (c.note === 'C5' ? 'Hi C' : LETTER(c.note)) : up ? '<svg viewBox="0 0 48 48"><use href="#wave"/></svg>' : '<svg viewBox="0 0 72 104"><use href="#cardback"/></svg>';
+  el.setAttribute('aria-label', c.done ? `Matched ${NAME[c.note]}` : up ? 'Face up card' : `Card ${i+1}`);
+}
+function smStat(){
+  const total = sm.deck.length/2;
+  if(sm.players.length === 1){
+    $('smStat').innerHTML = `<span class="tag">Turns ${sm.turns}</span><span class="tag">Pairs ${sm.pairs}/${total}</span>`;
+    $('smScore').textContent = '';
+  } else {
+    $('smStat').innerHTML = sm.players.map((n,k) => `<span class="tag${k===sm.cur?' turn':''}" style="--pc:${PCOL[n]}"></span>`).join('');
+    [...$('smStat').children].forEach((el,k) => el.textContent = `${sm.players[k]} ${sm.scores[k]}` + (k===sm.cur ? ' · your turn' : ''));
+    $('smScore').textContent = `${sm.pairs}/${total}`;
+  }
+}
+function smTap(i){
+  if(!sm) return;
+  const c = sm.deck[i];
+  if(c.done || sm.open.includes(i)){ playNote('piano', c.note); return; }
+  if(sm.lock) return;
+  sm.open.push(i); playNote('piano', c.note); smCard(i, true);
+  if(sm.open.length < 2) return;
+  sm.lock = true; sm.turns++;
+  const [a,b] = sm.open;
+  if(sm.deck[a].note === sm.deck[b].note){
+    later(() => {
+      [a,b].forEach(k => { sm.deck[k].done = true; sm.deck[k].owner = sm.cur; });
+      sm.open = []; sm.lock = false; sm.pairs++; sm.scores[sm.cur]++;
+      SFX.match(); smCard(a, true); smCard(b, true); smStat();
+      if(sm.pairs === sm.deck.length/2) later(smEnd, 900);
+    }, 500);
+  } else {
+    later(() => {
+      sm.open = []; sm.lock = false; smCard(a, true); smCard(b, true);
+      if(sm.players.length > 1) sm.cur = 1 - sm.cur;
+      smStat();
+    }, 1500);
+  }
+  smStat();
+}
+function smEnd(){
+  SFX.win();
+  const again = {go:'Play again', onGo:() => startSm(true), alt:'Back to games', onAlt:() => show('picker')};
+  if(sm.players.length === 1){
+    const s = P().sm, prev = s[save.smSize], best = !prev || sm.turns < prev;
+    if(best){ s[save.smSize] = sm.turns; persist(); }
+    overlay({title: best ? 'New Best!' : 'Cleared!', big: String(sm.turns), text: `All pairs found in ${sm.turns} turns` + (prev && !best ? ` · best is ${prev}` : ''), ...again});
+  } else {
+    const [x,y] = sm.scores, t = x === y;
+    overlay({title: t ? 'Tie!' : `${sm.players[x>y?0:1]} wins!`, big:`${x}–${y}`, text:`${sm.players[0]} ${x} · ${sm.players[1]} ${y}`, ...again});
+  }
+}
+
+/* ---------- Ear Duel solo ---------- */
+function shuffleKids(el){ const a = [...el.children]; for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } a.forEach(c => el.appendChild(c)); }
+const ed = {q:null, score:0, last:[], introLeft:0};
+function edPaint(){
+  const L = LADDERS.ed[P().ed.level];
+  $('edGrid').style.gridTemplateColumns = `repeat(${L.inst.length === 4 ? 2 : 3},minmax(0,1fr))`;
+  $('edGrid').innerHTML = L.inst.map(i => `<button class="ib${L.hide?' hide':''}" data-i="${i}" aria-label="${INST[i]}">${icon(i)}<span>${INST[i]}</span></button>`).join('');
+  paintMeter('ed'); $('edScore').textContent = ed.score;
+}
+function edPick(insts, last){
+  let i; do { i = rnd(insts); } while(last.length > 1 && last[0] === i && last[1] === i);
+  return {inst:i, note:rnd(ED_NOTES)};
+}
+function edNext(){
+  const L = LADDERS.ed[P().ed.level];
+  let pick = edPick(L.inst, ed.last);
+  if(ed.introLeft > 0){ ed.introLeft--; if(L.intro && L.intro !== 'shadow' && Math.random() < .4) pick.inst = L.intro; }
+  ed.q = {...pick, t0:0, done:false};
+  ed.last = [ed.q.inst, ...ed.last].slice(0,2);
+  if(L.shuffle) shuffleKids($('edGrid'));
+  document.querySelectorAll('#edGrid .ib').forEach(b => b.classList.remove('right','wrong','glow'));
+  say('edSay', 'Listen…');
+  later(() => { playNote(ed.q.inst, ed.q.note); ed.q.t0 = performance.now(); say('edSay', "Who's playing?"); }, 550);
+}
+function edAnswer(btn){
+  const q = ed.q; if(!q || q.done || !q.t0) return;
+  q.done = true;
+  const ok = btn.dataset.i === q.inst, s = P().ed;
+  if(ok){
+    ed.score += 100 + Math.max(0, Math.round(50 - (performance.now()-q.t0)/100));
+    s.best = Math.max(s.best, ed.score);
+    btn.classList.add('right'); say('edSay', 'Yes! ' + INST[q.inst], 'ok'); SFX.ding(); bounce($('edNinja'), 'jump');
+  } else {
+    btn.classList.add('wrong'); say('edSay', 'That was ' + INST[q.inst], 'no'); bounce($('edNinja'), 'shake');
+    later(() => { const r = document.querySelector(`#edGrid .ib[data-i="${q.inst}"]`); if(r) r.classList.add('glow'); playNote(q.inst, q.note); }, 500);
+  }
+  const ch = record('ed', ok); persist();
+  paintMeter('ed'); $('edScore').textContent = ed.score;
+  later(() => {
+    if(ch === 'up'){ ed.introLeft = 10; edPaint(); levelUpCard('ed', edNext); }
+    else if(ch === 'down'){ edPaint(); toast(`Back to level ${s.level+1} for some practice`); later(edNext, 2400); }
+    else edNext();
+  }, ok ? 1100 : 2400);
+}
+function startEdSolo(){ ed.score = 0; ed.last = []; ed.introLeft = 0; show('ed'); edPaint(); edNext(); }
+
+/* ---------- Ear Duel 2-player (one phone, split screen) ---------- */
+let duel = null;
+function startDuel(){
+  const L = LADDERS.ed[P().ed.level];
+  duel = {players:[save.who, other()], scores:[0,0], round:0, q:null, open:false, locked:[false,false], last:[], L};
+  show('duel');
+  [0,1].forEach(k => {
+    const h = $('h'+k);
+    h.style.setProperty('--pc', PCOL[duel.players[k]]);
+    h.querySelector('.nm').textContent = duel.players[k];
+    const g = h.querySelector('.igrid');
+    g.style.gridTemplateColumns = `repeat(${L.inst.length === 4 ? 2 : 3},minmax(0,1fr))`;
+    g.innerHTML = L.inst.map(i => `<button class="ib${L.hide?' hide':''}" data-i="${i}" data-p="${k}" aria-label="${INST[i]}">${icon(i)}<span>${INST[i]}</span></button>`).join('');
+  });
+  duelPaint(); duelRound();
+}
+function duelPaint(){
+  [0,1].forEach(k => { const h = $('h'+k); h.querySelector('.pts').textContent = duel.scores[k]; h.classList.toggle('locked', duel.locked[k]); });
+  $('duelRound').textContent = `${Math.max(1,duel.round)}/${DUEL_ROUNDS}`;
+}
+function duelMsg(k, t){ $('h'+k).querySelector('.msg').textContent = t; }
+function duelRound(){
+  if(duel.round >= DUEL_ROUNDS) return duelEnd();
+  duel.round++; duel.locked = [false,false]; duel.open = false;
+  document.querySelectorAll('#duel .ib').forEach(b => b.classList.remove('right','wrong','glow'));
+  if(duel.L.shuffle) [0,1].forEach(k => shuffleKids($('h'+k).querySelector('.igrid')));
+  duel.q = edPick(duel.L.inst, duel.last); duel.last = [duel.q.inst, ...duel.last].slice(0,2);
+  duelMsg(0,''); duelMsg(1,''); say('duelSay', 'Listen…'); duelPaint();
+  later(() => { playNote(duel.q.inst, duel.q.note); duel.open = true; say('duelSay', "Who's playing?"); }, 700);
+}
+function duelTap(btn){
+  const k = +btn.dataset.p;
+  if(!duel || !duel.open || duel.locked[k]) return;
+  if(btn.dataset.i === duel.q.inst){
+    duel.open = false; duel.scores[k]++;
+    btn.classList.add('right'); SFX.ding();
+    duelMsg(k, 'Point!'); duelMsg(1-k, `${duel.players[k]} got it`);
+    say('duelSay', INST[duel.q.inst], 'ok');
+    duelPaint(); later(duelRound, 1700);
+  } else {
+    btn.classList.add('wrong'); duel.locked[k] = true; duelMsg(k, 'Locked out!');
+    if(duel.locked[0] && duel.locked[1]){
+      duel.open = false; say('duelSay', 'It was ' + INST[duel.q.inst], 'no');
+      document.querySelectorAll(`#duel .ib[data-i="${duel.q.inst}"]`).forEach(b => b.classList.add('glow'));
+      later(() => playNote(duel.q.inst, duel.q.note), 400);
+      later(duelRound, 2300);
+    }
+    duelPaint();
+  }
+}
+function duelEnd(){
+  SFX.win();
+  const [x,y] = duel.scores, t = x === y;
+  overlay({title: t ? 'Tie!' : `${duel.players[x>y?0:1]} wins!`, big:`${x}–${y}`, text:`${DUEL_ROUNDS} rounds · ${duel.players[0]} ${x} · ${duel.players[1]} ${y}`, go:'Rematch', onGo:startDuel, alt:'Back to games', onAlt:() => show('picker')});
+}
+
+/* ---------- online head-to-head ---------- */
+const FIREBASE_CONFIG = {apiKey:"AIzaSyC2oZg9ZSqwzEOW6oO5Gwz649Btd3Rpvu0", authDomain:"peppauno.firebaseapp.com", databaseURL:"https://peppauno-default-rtdb.firebaseio.com", projectId:"peppauno", storageBucket:"peppauno.firebasestorage.app", messagingSenderId:"163470023859", appId:"1:163470023859:web:bd2fcbf954f34b7126a4c6"};
+const NS = 'noteninjas/'; /* this game's own corner of the database */
+const FB_VER = '10.12.2';
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+const NINJA = 'NINJA';
+const NET_GAMES = {pq:'Pitch Quest', ed:'Ear Duel', sm:'Shadow Match', bk:'Battle Keys'};
+let netBounced = '', bkWake = 0, lastEndGid = 0, net = null, room = null, roomCode = null, lastSnd = 0, myN = Date.now(), H = null, hostTimer = 0, timerRaf = 0, bkTaps = [], netPadKey = '', netShown = '';
+
+function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('load ' + src)); document.head.appendChild(s); }); }
+function getPath(o, p){ return p.split('/').reduce((a,k) => a == null ? undefined : a[k], o); }
+function setPath(o, p, v){ const ks = p.split('/'); let a = o; for(let i=0;i<ks.length-1;i++){ if(a[ks[i]] == null || typeof a[ks[i]] !== 'object') a[ks[i]] = {}; a = a[ks[i]]; } if(v == null) delete a[ks[ks.length-1]]; else a[ks[ks.length-1]] = v; }
+const clone = o => JSON.parse(JSON.stringify(o));
+
+async function fbBackend(){
+  if(!FIREBASE_CONFIG) throw new Error('setup');
+  const base = `https://www.gstatic.com/firebasejs/${FB_VER}/`;
+  if(!window.firebase) await loadScript(base + 'firebase-app-compat.js');
+  if(!firebase.database) await loadScript(base + 'firebase-database-compat.js');
+  if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  const myId = 'u' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  const db = firebase.database(); let offset = 0, conn = true; const subs = [], pres = new Set();
+  db.ref('.info/serverTimeOffset').on('value', s => offset = s.val() || 0);
+  const arm = p => { const r = db.ref(NS + p + '/off'); r.onDisconnect().set(firebase.database.ServerValue.TIMESTAMP); r.remove(); };
+  db.ref('.info/connected').on('value', s => { conn = !!s.val(); if(conn) pres.forEach(arm); });
+  return {
+    uid: myId, TS: firebase.database.ServerValue.TIMESTAMP, now: () => Date.now() + offset, connected: () => conn,
+    presence: p => { pres.add(p); arm(p); },
+    cancelLeave: p => { pres.delete(p); db.ref(NS + p + '/off').onDisconnect().cancel(); },
+    set: (p, v) => db.ref(NS + p).set(v),
+    get: async p => (await db.ref(NS + p).get()).val(),
+    listen: (p, cb) => { const r = db.ref(NS + p), f = s => cb(s.val()); r.on('value', f); subs.push(() => r.off('value', f)); },
+    close: () => subs.splice(0).forEach(f => f())
+  };
+}
+function localBackend(){ /* test stand-in: tabs of one browser share this "server" through BroadcastChannel */
+  const K = 'nnfake', ch = new BroadcastChannel('nnfake'), subs = [];
+  let mem; try { mem = JSON.parse(localStorage.getItem(K)) || {}; } catch(e) { mem = {}; }
+  const fire = () => subs.forEach(([p,cb]) => { const v = getPath(mem, p); cb(v === undefined ? null : clone(v)); });
+  const apply = (p, v) => { setPath(mem, p, v); try { localStorage.setItem(K, JSON.stringify(mem)); } catch(e) {} };
+  const prune = v => { if(v === null || typeof v !== 'object') return v; const o = Array.isArray(v) ? [] : {}; let any = false;
+    for(const [k, x] of Object.entries(v)){ const y = prune(x); if(y !== undefined && y !== null){ o[k] = y; any = true; } }
+    return any ? (Array.isArray(v) ? o.filter(x => x !== undefined) : o) : undefined; };
+  ch.onmessage = e => { apply(e.data.p, e.data.v); fire(); };
+  return {
+    uid: 'u' + Math.random().toString(36).slice(2, 8), TS: {'.sv':'timestamp'}, now: () => Date.now(),
+    set: async (p, v) => { const val = v == null ? null : prune(JSON.parse(JSON.stringify(v, (k,x) => x && x['.sv'] ? Date.now() : x))) ?? null; apply(p, val); ch.postMessage({p, v: val}); fire(); },
+    get: async p => { const v = getPath(mem, p); return v === undefined ? null : clone(v); },
+    listen: (p, cb) => { subs.push([p, cb]); setTimeout(fire, 0); },
+    connected: () => true, presence: () => {}, cancelLeave: () => {}, close: () => { subs.length = 0; }
+  };
+}
+async function netInit(){
+  if(net) return net;
+  net = location.search.includes('net=local') ? localBackend() : await fbBackend();
+  return net;
+}
+function netError(e){
+  const m = String(e && e.message || e);
+  toast(m === 'setup' ? 'Online play is not switched on yet' : m.startsWith('load') ? 'Online play needs the Note Ninjas website' : 'Could not reach the game server', 3200);
+}
+const myPlayer = () => ({name: save.who, pq: P().pq.level, ed: P().ed.level, pad: P().pq.pad, at: net.TS});
+const order = r => r ? [r.host, ...Object.keys(r.players || {}).filter(u => u !== r.host).sort()].filter(u => r.players && r.players[u]).slice(0, 2) : [];
+function label(r, u){ const p = r.players[u]; if(!p) return 'Player'; const o = order(r).find(x => x !== u); return o && r.players[o] && r.players[o].name === p.name && u !== r.host ? p.name + ' 2' : p.name; }
+
+async function createRoom(){
+  try { await netInit(); } catch(e) { return netError(e); }
+  try {
+    let code;
+    for(let i=0;i<8;i++){ code = Array.from({length:4}, () => rnd([...CODE_CHARS])).join(''); if(!(await net.get('rooms/' + code))) break; }
+    await net.set('rooms/' + code, {host: net.uid, created: net.TS, cfg: {game:'pq', style:'race', clock: save.netClock || 5, rounds:10, size:'easy'}, players: {[net.uid]: myPlayer()}});
+    net.presence(`rooms/${code}/players/${net.uid}`);
+    enterRoom(code);
+  } catch(e) { netError(e); }
+}
+async function joinRoom(code){
+  code = (code || '').toUpperCase().replace(/[^A-Z]/g, '');
+  if(code.length !== 4) return toast('Room codes have 4 letters');
+  try { await netInit(); } catch(e) { return netError(e); }
+  try {
+    const r = await net.get('rooms/' + code);
+    if(!r || !r.host) return toast('No room called ' + code);
+    if(Object.keys(r.players || {}).length >= 2 && !(r.players || {})[net.uid]) return toast('That room is full');
+    await net.set(`rooms/${code}/players/${net.uid}`, myPlayer());
+    net.presence(`rooms/${code}/players/${net.uid}`);
+    enterRoom(code);
+  } catch(e) { netError(e); }
+}
+function enterRoom(code){
+  roomCode = code; room = null; lastSnd = ''; H = null; netShown = '';
+  stopMusic(); wake(true);
+  net.listen('rooms/' + code, onRoom);
+}
+async function leaveRoom(msg){
+  const code = roomCode, wasHost = room && net && room.host === net.uid; roomCode = null; room = null; H = null;
+  clearInterval(hostTimer); hostTimer = 0; cancelAnimationFrame(timerRaf); wake(false);
+  show('picker');
+  if(typeof msg === 'string') toast(msg, 3000);
+  if(net){ net.close(); if(code){ try { net.cancelLeave(`rooms/${code}/players/${net.uid}`); await net.set(wasHost ? `rooms/${code}` : `rooms/${code}/players/${net.uid}`, null); } catch(e) {} } }
+}
+function sendInput(type, v){
+  const S = room && room.state; if(!S) return;
+  Promise.resolve(net.set(`rooms/${roomCode}/in/${net.uid}`, {n: ++myN, type, v: v === undefined ? null : v, r: S.round || 0, st: S.bk ? S.bk.stage : '', t: net.now()})).catch(() => toast('Connection problem, try again'));
+}
+let wakeLock = null;
+function wake(on){
+  try {
+    if(on && !wakeLock && navigator.wakeLock) navigator.wakeLock.request('screen').then(l => { wakeLock = l; l.addEventListener('release', () => { if(wakeLock === l) wakeLock = null; }); }).catch(() => {});
+    if(!on && wakeLock){ wakeLock.release(); wakeLock = null; }
+  } catch(e) {}
+}
+
+/* ---------- host engine: the room creator's phone runs the game ---------- */
+function pickPQ(pl){
+  let lv = Math.min(pl.pq || 0, 9); if(lv === 9 && pl.pad !== 'piano') lv = 8;
+  const L = LADDERS.pq[lv], pad = lv === 9 ? 'piano' : (PADS[pl.pad] ? pl.pad : 'piano');
+  const note = L.black && Math.random() < .4 ? rnd(BLACKS) : rnd(L.black ? WHITE : L.notes);
+  const inst = L.mixed ? rnd(MIX) : PADS[pad].sound, shift = !!PADS[pad].octave && (!L.mixed || inst === 'cello');
+  return {note, inst, play: shift ? down8(note) : note, ans: note};
+}
+function pickED(pl){ const L = LADDERS.ed[pl.ed || 0], inst = rnd(L.inst), note = rnd(ED_NOTES); return {note, inst, play: note, ans: inst}; }
+const capLv = pl => { let lv = Math.min(pl.pq || 0, 9); if(lv === 9 && pl.pad !== 'piano') lv = 8; return lv; };
+function raceQ(S){
+  if(S.game === 'pq'){
+    const L = LADDERS.pq[Math.min(...S.pl.map(u => capLv(S.players[u])))];
+    const note = L.black && Math.random() < .4 ? rnd(BLACKS) : rnd(L.black ? WHITE : L.notes), inst = L.mixed ? rnd(MIX) : 'piano';
+    return {note, inst, play: note, ans: note};
+  }
+  const L = LADDERS.ed[Math.min(...S.pl.map(u => S.players[u].ed || 0))], inst = rnd(L.inst), note = rnd(ED_NOTES);
+  return {note, inst, play: note, ans: inst};
+}
+function bkNotes(pl){ let lv = Math.min(pl.pq || 0, 9); return LADDERS.pq[lv].notes; }
+function hostStart(r){
+  const cfg = r.cfg, pl = order(r), now = net.now();
+  const names = Object.fromEntries(pl.map(u => [u, label(r, u)]));
+  const S = {gid: now, names, phase:'show', game: cfg.game, style: cfg.style, clock: Math.min(99, Math.max(1, cfg.clock|0)), rounds: cfg.rounds, round:0, sid:0, scores:{[pl[0]]:0, [pl[1]]:0}, pl, players: clone(r.players), nextAt: now + 1200, res:{text:'Get ready…'}};
+  if(cfg.game === 'sm'){
+    const notes = SM_SIZES[cfg.size] || SM_SIZES.easy, deck = [...notes, ...notes];
+    for(let i=deck.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [deck[i],deck[j]] = [deck[j],deck[i]]; }
+    S.sm = {deck, done:{}, open:[]}; S.turn = pl[1]; S.style = 'turns';
+  }
+  if(cfg.game === 'bk'){ S.bk = {setter: pl[1], stage:'set', pattern:null, letters:{[pl[0]]:0, [pl[1]]:0}}; S.style = 'turns'; }
+  H = {S, seen:{}};
+  return S;
+}
+const oppOf = (S, u) => S.pl.find(x => x !== u);
+function snd(S, at, all, per){ S.sid++; S.snd = {id: S.sid, at, all: all || [], per: per || {}}; }
+function nextRound(S){
+  const now = net.now(); S.res = null; S.locked = {};
+  if(S.game === 'sm'){
+    if(S.round === 0){ S.round = 1; S.turn = oppOf(S, S.turn); }
+    else { S.sm.open = []; S.turn = oppOf(S, S.turn); }
+    S.phase = 'ask'; S.deadline = now + S.clock * 1000; S.openAt = now; return;
+  }
+  if(S.game === 'bk'){
+    if(S.round > 0) S.bk.setter = oppOf(S, S.bk.setter);
+    S.round++; S.bk.stage = 'set'; S.bk.pattern = null; S.turn = S.bk.setter;
+    S.phase = 'ask'; S.openAt = now; S.deadline = now + Math.max(15, S.clock * 3) * 1000; return;
+  }
+  S.round++;
+  const total = S.style === 'turns' ? S.rounds * 2 : S.rounds;
+  if(S.round > total) return hostEnd(S);
+  const at = now + 900;
+  S.q = {}; S.pend = null; S.pendAt = 0; S.got = {};
+  if(S.style === 'race'){
+    S.turn = null;
+    const q = raceQ(S); S.pl.forEach(u => S.q[u] = q);
+    snd(S, at, [[q.inst, q.play, 0]]);
+  } else {
+    S.turn = S.pl[(S.round - 1) % 2];
+    const q = S.game === 'pq' ? pickPQ(S.players[S.turn]) : pickED(S.players[S.turn]);
+    S.q[S.turn] = q; snd(S, at, [[q.inst, q.play, 0]]);
+  }
+  S.phase = 'ask'; S.openAt = at; S.deadline = at + S.clock * 1000;
+}
+function hostShow(S, text, ms, extra){ S.phase = 'show'; S.res = Object.assign({text}, extra || {}); S.nextAt = net.now() + ms; S.deadline = 0; }
+function hostEnd(S){
+  S.phase = 'end'; S.deadline = 0;
+  const [a, b] = S.pl;
+  if(S.game === 'bk'){ const la = S.bk.letters[a], lb = S.bk.letters[b]; S.res = {win: la === lb ? null : (la < lb ? a : b)}; }
+  else S.res = {win: S.scores[a] === S.scores[b] ? null : (S.scores[a] > S.scores[b] ? a : b)};
+}
+function hostInput(S, u, inp){
+  const now = net.now();
+  if(S.phase !== 'ask') return false;
+  if(S.game === 'pq' || S.game === 'ed'){
+    if(inp.type !== 'ans' || inp.r !== S.round || now < S.openAt - 80) return false;
+    S.locked = S.locked || {}; S.got = S.got || {};
+    if(S.style === 'race' ? (S.locked[u] || S.got[u]) : u !== S.turn) return false;
+    const q = S.q[u], ok = inp.v === q.ans, nm = S.names[u];
+    if(S.style === 'race'){
+      if(ok){ S.got[u] = 1; const t = Math.min(inp.t || now, now); if(!S.pend || t < S.pend.t) S.pend = {u, t}; if(!S.pendAt) S.pendAt = now + 350; return true; }
+      S.locked[u] = 1;
+      if(!S.pend && S.pl.every(x => S.locked[x])) hostShow(S, 'Nobody got it', 2200);
+      return true;
+    }
+    if(ok){ S.scores[u]++; hostShow(S, `${nm} got it!`, 1800, {win:u}); }
+    else hostShow(S, `${nm} missed`, 2200);
+    return true;
+  }
+  if(S.game === 'sm'){
+    const sm = S.sm, i = inp.v;
+    if(inp.type !== 'flip' || u !== S.turn || sm.done[i] || sm.open.includes(i) || sm.open.length >= 2 || i == null || i >= sm.deck.length) return false;
+    sm.open.push(i); snd(S, now + 60, [['piano', sm.deck[i], 0]]);
+    if(sm.open.length === 2){
+      const [a, b] = sm.open;
+      if(sm.deck[a] === sm.deck[b]){
+        sm.done[a] = u; sm.done[b] = u; sm.open = []; S.scores[u]++; S.deadline = now + S.clock * 1000;
+        if(Object.keys(sm.done).length === sm.deck.length) { S.phase = 'show'; S.res = {text:'All pairs found!'}; S.nextAt = now + 1200; S.finish = 1; }
+      } else hostShow(S, 'No match', 1500);
+    }
+    return true;
+  }
+  if(S.game === 'bk'){
+    const bk = S.bk, resp = oppOf(S, bk.setter), names = p => p.map(n => NAME[n]).join(' ');
+    if(inp.st !== bk.stage || inp.r !== S.round) return false;
+    if(bk.stage === 'set' && inp.type === 'set' && u === bk.setter){
+      const allowed = bkNotes(S.players[resp]), p = Array.isArray(inp.v) ? inp.v.filter(n => allowed.includes(n)).slice(0, 8) : [];
+      if(!p.length) return false;
+      bk.pattern = p; bk.stage = 'prove'; S.turn = bk.setter;
+      const at = now + 800; snd(S, at, p.map((n,k) => ['piano', n, k*700]));
+      S.openAt = at + (p.length - 1) * 700 + 300; S.deadline = S.openAt + S.clock * 1000 * p.length;
+      S.res = {text: 'Prove it!'};
+      return true;
+    }
+    if(inp.type === 'try' && now >= S.openAt - 80 && ((bk.stage === 'prove' && u === bk.setter) || (bk.stage === 'match' && u === resp))){
+      const ok = Array.isArray(inp.v) && inp.v.join() === bk.pattern.join();
+      return bkResolve(S, ok), true;
+    }
+  }
+  return false;
+}
+function bkResolve(S, ok){
+  const bk = S.bk, resp = oppOf(S, bk.setter), now = net.now(), nm = u => S.names[u], pat = bk.pattern.map(n => NAME[n]).join(' ');
+  if(bk.stage === 'prove'){
+    if(!ok) return hostShow(S, `${nm(bk.setter)} missed their own pattern. No letter.`, 2600, {pat});
+    bk.stage = 'match'; S.turn = resp;
+    const at = now + 1100; snd(S, at, bk.pattern.map((n,k) => ['piano', n, k*700]));
+    S.openAt = at + (bk.pattern.length - 1) * 700 + 300; S.deadline = S.openAt + S.clock * 1000 * bk.pattern.length;
+    S.res = {text: `Proved! ${nm(resp)}, match it`};
+    return;
+  }
+  if(ok) return hostShow(S, `${nm(resp)} matched it! No letter.`, 2400, {pat});
+  bk.letters[resp]++;
+  if(bk.letters[resp] >= NINJA.length){ hostShow(S, `${nm(resp)} spelled NINJA!`, 1800, {pat}); S.finish = 1; return; }
+  hostShow(S, `${nm(resp)} gets a letter: ${NINJA.slice(0, bk.letters[resp])}`, 2600, {pat});
+}
+function hostTimeout(S){
+  if(S.game === 'sm'){ S.sm.open = []; hostShow(S, 'Time!', 1200); return; }
+  if(S.game === 'bk'){ if(S.bk.stage === 'set') hostShow(S, `${S.names[S.bk.setter]} took too long to set. Turn passes.`, 2200); else bkResolve(S, false); return; }
+  hostShow(S, "Time's up!", 2000);
+}
+function hostTick(){
+  if(!roomCode || !room || !net) return;
+  const now = net.now();
+  for(const [u, p] of Object.entries(room.players || {})){
+    if(u !== net.uid && p && p.off && now - p.off > 20000){ net.set(`rooms/${roomCode}/players/${u}`, null); if(H){ H = null; net.set(`rooms/${roomCode}/state`, {phase:'lobby', left:1}); } return; }
+  }
+  if(!H) return;
+  const S = H.S; let ch = false;
+  if(S.phase === 'ask' && S.pend && now >= S.pendAt){ const u = S.pend.u; S.scores[u]++; hostShow(S, `${S.names[u]} got it!`, 1800, {win:u}); S.pend = null; S.pendAt = 0; ch = true; }
+  else if(S.phase === 'ask' && S.deadline && now > S.deadline){ hostTimeout(S); ch = true; }
+  else if(S.phase === 'show' && now >= S.nextAt){ if(S.finish) hostEnd(S); else nextRound(S); ch = true; }
+  if(ch) net.set(`rooms/${roomCode}/state`, S);
+}
+function hostOnRoom(r){
+  if(!H || !r.state || r.state.phase === 'lobby') return;
+  if(order(r).length < 2 && H.S.phase !== 'end'){ H = null; net.set(`rooms/${roomCode}/state`, {phase:'lobby', left:1}); return; }
+  let ch = false;
+  for(const [u, inp] of Object.entries(r.in || {})){
+    if(!inp || (H.seen[u] || 0) >= inp.n) continue;
+    H.seen[u] = inp.n;
+    if(H.S.pl.includes(u) && hostInput(H.S, u, inp)) ch = true;
+  }
+  if(ch) net.set(`rooms/${roomCode}/state`, H.S);
+}
+
+/* ---------- client: every phone draws the shared state ---------- */
+function onRoom(r){
+  if(!roomCode) return;
+  if(!r || !r.host){ if(net.connected()) leaveRoom('The room closed'); return; }
+  const S0 = r.state;
+  if(S0 && S0.pl){
+    if(S0.sm){ S0.sm.done = S0.sm.done || {}; S0.sm.open = S0.sm.open || []; }
+    if(S0.bk){ S0.bk.letters = S0.bk.letters || {}; S0.pl.forEach(u => S0.bk.letters[u] = S0.bk.letters[u] || 0); }
+    S0.scores = S0.scores || {}; S0.pl.forEach(u => S0.scores[u] = S0.scores[u] || 0);
+    S0.locked = S0.locked || {}; S0.got = S0.got || {}; S0.names = S0.names || {};
+  }
+  room = r;
+  const isHost = r.host === net.uid;
+  if(isHost && !hostTimer) hostTimer = setInterval(hostTick, 150);
+  if(isHost){ hostOnRoom(r); if(room !== r) return; }
+  if(!r.players || !r.players[net.uid]){ if(net.connected()) leaveRoom('You left the room'); return; }
+  if(!order(r).includes(net.uid) || (S0 && S0.pl && S0.phase !== 'lobby' && !S0.pl.includes(net.uid))){ leaveRoom('That room is full'); return; }
+  const S = r.state;
+  if(!S || S.phase === 'lobby'){
+    if(netShown !== 'lobby'){ netShown = 'lobby'; show('lobby'); if(S && S.left) toast('The other player left'); }
+    paintLobby(); return;
+  }
+  if(netShown !== 'net'){ netShown = 'net'; netPadKey = ''; bkTaps = []; show('net'); timerLoop(); }
+  playSnd(S); paintNet(S);
+}
+function paintLobby(){
+  const r = room, isHost = r.host === net.uid, pl = order(r), c = r.cfg;
+  $('lobCode').textContent = roomCode;
+  $('lobPlayers').innerHTML = [0,1].map(k => pl[k] ? `<span class="tag" style="--pc:${PCOL[r.players[pl[k]].name] || '#3fb7ff'}"></span>` : '<span class="tag wait">Waiting for a player…</span>').join('');
+  [...$('lobPlayers').children].forEach((el,k) => { if(pl[k]) el.textContent = label(r, pl[k]) + (pl[k] === r.host ? ' · host' : '') + (pl[k] === net.uid ? ' (you)' : ''); });
+  document.querySelectorAll('#lobby [data-nset]').forEach(g => {
+    const key = g.dataset.nset;
+    g.querySelectorAll('.chip').forEach(b => { b.setAttribute('aria-pressed', String(c[key]) === b.dataset.v); b.disabled = !isHost; });
+  });
+  $('lobStyleRow').hidden = !(c.game === 'pq' || c.game === 'ed');
+  $('lobRoundsRow').hidden = !(c.game === 'pq' || c.game === 'ed');
+  $('lobSizeRow').hidden = c.game !== 'sm';
+  if(document.activeElement !== $('lobClock')) $('lobClock').value = c.clock;
+  $('lobClock').disabled = !isHost;
+  document.querySelectorAll('#lobby [data-clk]').forEach(b => b.disabled = !isHost);
+  $('lobHelp').textContent = {pq:'Hear a note, find it. Everyone plays at their own level and pad.', ed:'Name the instrument. Everyone plays at their own level.', sm:'Take turns flipping cards. Both phones hear every flip.', bk:'Set a pattern, prove it, then the other player matches it. Miss and you get a letter of NINJA.'}[c.game] + (c.game === 'pq' || c.game === 'ed' ? (c.style === 'race' ? ' Race: first right answer wins the point.' : ' Turns: you take turns answering.') : '') + ` Clock: ${c.clock} s per turn.`;
+  $('lobStart').hidden = !isHost; $('lobStart').disabled = pl.length < 2;
+  $('lobWait').hidden = isHost; $('lobWait').textContent = pl.length < 2 ? 'Waiting for the other player…' : `Waiting for ${label(r, r.host)} to start`;
+}
+function setCfg(key, v){ if(room && room.host === net.uid){ net.set(`rooms/${roomCode}/cfg/${key}`, v); if(key === 'clock'){ save.netClock = v; persist(); } } }
+function playSnd(S){
+  const key = S.gid + ':' + (S.snd && S.snd.id);
+  if(!S.snd || key === lastSnd) return;
+  lastSnd = key;
+  const list = [...(S.snd.all || []), ...((S.snd.per || {})[net.uid] || [])];
+  list.forEach(([inst, note, dt]) => { const wait = S.snd.at + dt - net.now(); if(wait > -1000) setTimeout(() => { if(roomCode) playNote(inst, note); }, Math.max(0, wait)); });
+}
+function myQ(S){ return S.q ? (S.style === 'race' ? S.q[net.uid] : S.q[S.turn]) : null; }
+function netPad(S){
+  const me = net.uid, el = $('netPad');
+  let key, html, cls;
+  if(S.game === 'sm'){ key = 'sm' + S.sm.deck.length; }
+  else if(S.game === 'bk'){ key = 'bk' + bkNotes(S.players[oppOf(S, S.bk.setter)]).length; }
+  else if(S.game === 'ed'){ const who = S.style === 'race' ? me : (S.turn || me); key = 'ed' + (S.players[who].ed || 0); }
+  else { const pl = S.players[me]; let lv = Math.min(pl.pq || 0, 9); if(lv === 9 && pl.pad !== 'piano') lv = 8; key = 'pq' + (lv === 9 ? 'piano' : pl.pad) + lv; }
+  if(key === netPadKey) return;
+  netPadKey = key;
+  if(S.game === 'sm'){
+    el.className = 'grid net'; el.style.gridTemplateColumns = ''; el.style.gridTemplateRows = `repeat(${S.sm.deck.length/4},minmax(0,1fr))`;
+    el.innerHTML = S.sm.deck.map((_,i) => `<button class="card" data-i="${i}" aria-label="Card ${i+1}"></button>`).join('');
+  } else if(S.game === 'ed'){
+    const who = S.style === 'race' ? me : (S.turn || me), L = LADDERS.ed[S.players[who].ed || 0];
+    el.className = 'igrid net'; el.style.gridTemplateRows = ''; el.style.gridTemplateColumns = `repeat(${L.inst.length === 4 ? 2 : 3},minmax(0,1fr))`;
+    el.innerHTML = L.inst.map(i => `<button class="ib${L.hide ? ' hide' : ''}" data-i="${i}" aria-label="${INST[i]}">${icon(i)}<span>${INST[i]}</span></button>`).join('');
+  } else {
+    const pad = S.game === 'bk' ? 'piano' : key.slice(2).replace(/\d+$/, '');
+    el.style.gridTemplateRows = ''; el.style.gridTemplateColumns = '';
+    el.className = 'kb pad-' + (PADS[pad].strings ? 'strings' : pad);
+    el.innerHTML = pad === 'piano' ? pianoPad() : pad === 'staff' ? staffPad() : stringPad(pad);
+  }
+}
+function paintNet(S){
+  const r = room, me = net.uid, opp = S.pl.find(u => u !== me), meName = label(r, me), oppName = opp ? label(r, opp) : 'Player';
+  const tag = u => S.game === 'bk' ? (NINJA.slice(0, S.bk.letters[u]) || '–') : S.scores[u];
+  const away = u => r.players[u] && r.players[u].off ? ' (away)' : '';
+  $('netMe').textContent = `${meName} ${tag(me)}`; $('netMe').style.setProperty('--pc', PCOL[S.players[me].name] || '#3fb7ff');
+  $('netOpp').textContent = `${oppName} ${tag(opp)}${away(opp)}`; $('netOpp').style.setProperty('--pc', PCOL[(S.players[opp] || {}).name] || '#3fb7ff');
+  const myTurn = !S.turn || S.turn === me;
+  $('netMe').classList.toggle('turn', S.phase === 'ask' && !!S.turn && S.turn === me);
+  $('netOpp').classList.toggle('turn', S.phase === 'ask' && !!S.turn && S.turn === opp);
+  const total = S.style === 'turns' ? S.rounds * 2 : S.rounds;
+  $('netRound').textContent = S.game === 'sm' ? `${Object.keys(S.sm.done).length/2}/${S.sm.deck.length/2}` : S.game === 'bk' ? `Round ${S.round}` : `${Math.max(1, S.round)}/${total}`;
+  $('netGame').textContent = NET_GAMES[S.game];
+  netPad(S);
+  let t = '';
+  if(S.phase === 'show' || S.phase === 'end') t = S.res ? (S.res.text || '') : '';
+  else if(S.game === 'sm') t = myTurn ? 'Your turn: flip 2 cards' : `${oppName}'s turn`;
+  else if(S.game === 'bk'){
+    const st = S.bk.stage, setter = S.bk.setter === me;
+    t = st === 'set' ? (setter ? `Set a pattern for ${oppName}, then tap Done` : `${oppName} is setting a pattern…`)
+      : st === 'prove' ? (setter ? (net.now() < S.openAt ? 'Listen…' : 'Prove it! Play your pattern') : `${oppName} has to play it back`)
+      : (!setter ? (net.now() < S.openAt ? 'Listen…' : 'Match it!') : `${oppName} is matching…`);
+  }
+  else if(net.now() < (S.openAt || 0)) t = 'Listen…';
+  else if(S.style === 'race') t = S.got[me] ? 'Got it! Checking who was first…' : S.locked[me] ? 'Locked out! Wait for the next one' : S.game === 'pq' ? 'Which note?' : "Who's playing?";
+  else t = myTurn ? (S.game === 'pq' ? 'Your turn: which note?' : "Your turn: who's playing?") : `${oppName}'s turn. Listen in!`;
+  say('netSay', t, S.phase === 'show' && S.res && S.res.win ? (S.res.win === me ? 'ok' : 'no') : '');
+  if(S.phase === 'show' && S.res && S.res.win && netBounced !== S.sid + ':' + S.round){ netBounced = S.sid + ':' + S.round; bounce($('netNinja'), S.res.win === me ? 'jump' : 'shake'); }
+  $('netAgain').hidden = !(S.game === 'pq' || S.game === 'ed');
+  /* pad state */
+  let bkAct = false;
+  const canAct = S.phase === 'ask' && net.now() >= (S.openAt || 0) - 80 && (S.style === 'race' ? !S.locked[me] && !S.got[me] : S.turn === me);
+  if(S.game === 'sm'){
+    [...$('netPad').children].forEach((el, i) => {
+      const owner = S.sm.done[i], up = S.sm.open.includes(i), note = S.sm.deck[i];
+      const cls = 'card' + (owner ? ' done' : up ? ' up' : '');
+      if(el.className.replace(' turning','') !== cls){ el.className = cls + ' turning'; }
+      el.style.setProperty('--pc', owner ? (PCOL[S.players[owner].name] || '#3fb7ff') : '');
+      el.innerHTML = owner ? (note === 'C5' ? 'Hi C' : LETTER(note)) : up ? '<svg viewBox="0 0 48 48"><use href="#wave"/></svg>' : '<svg viewBox="0 0 72 104"><use href="#cardback"/></svg>';
+      el.disabled = !canAct || !!owner || up;
+    });
+  } else if(S.game === 'ed'){
+    const q = myQ(S);
+    document.querySelectorAll('#netPad .ib').forEach(b => {
+      b.disabled = !canAct;
+      b.classList.toggle('right', S.phase !== 'ask' && !!q && b.dataset.i === q.ans && (S.style === 'race' || S.turn));
+    });
+  } else {
+    const allowed = S.game === 'bk' ? bkNotes(S.players[oppOf(S, S.bk.setter)]) : (() => { const pl = S.players[me]; let lv = Math.min(pl.pq || 0, 9); if(lv === 9 && pl.pad !== 'piano') lv = 8; return LADDERS.pq[lv].notes; })();
+    const hide = S.game === 'pq' ? !!LADDERS.pq[Math.min(S.players[me].pq || 0, 9)].hide : false;
+    bkAct = S.game === 'bk' && S.phase === 'ask' && net.now() >= S.openAt - 80 && ((S.bk.stage === 'set' || S.bk.stage === 'prove') ? S.bk.setter === me : S.bk.setter !== me);
+    const q = myQ(S);
+    document.querySelectorAll('#netPad .pk').forEach(k => {
+      const n = k.dataset.n;
+      k.disabled = !allowed.includes(n) || (S.game === 'bk' ? !bkAct : !canAct);
+      k.classList.toggle('hide', hide);
+      k.classList.toggle('right', S.game === 'pq' && S.phase !== 'ask' && !!q && n === q.ans && (S.style === 'race' || S.turn === me || S.res && S.res.win));
+      if(save.skin === 'paint' && WHITE.includes(n)) k.style.setProperty('--nc', noteColor(n)); else k.style.removeProperty('--nc');
+    });
+  }
+  if(S.phase === 'ask' && net.now() < S.openAt && bkWake !== S.openAt){ bkWake = S.openAt; setTimeout(() => { if(room && room.state) paintNet(room.state); }, S.openAt - net.now() + 30); }
+  /* Battle Keys tap tray */
+  const bkTray = S.game === 'bk' && S.phase === 'ask';
+  $('bkTray').hidden = !bkTray;
+  if(bkTray){
+    const st = S.bk.stage, setting = st === 'set' && S.bk.setter === me;
+    const len = st === 'set' ? 8 : S.bk.pattern.length;
+    if(bkTaps.st !== st + S.round){ bkTaps = []; bkTaps.st = st + S.round; }
+    $('bkDots').style.gridTemplateColumns = `repeat(${len},minmax(0,1fr))`;
+    $('bkDots').innerHTML = Array.from({length: len}, (_,i) => `<span class="slot ${i < bkTaps.length ? 'ok' : ''}"></span>`).join('');
+    $('bkDone').hidden = !setting; $('bkUndo').hidden = !(setting || (st !== 'set' && bkAct));
+    $('bkDone').disabled = !bkTaps.length;
+  }
+  if(S.phase === 'end' && lastEndGid !== S.gid){ lastEndGid = S.gid; netEnd(S); }
+}
+function netEnd(S){
+  SFX.win();
+  const me = net.uid, w = S.res && S.res.win, isHost = room.host === me, [a, b] = S.pl;
+  const big = S.game === 'bk' ? `<span class="big sm">${NINJA.slice(0, S.bk.letters[a]) || '–'} vs ${NINJA.slice(0, S.bk.letters[b]) || '–'}</span>` : `${S.scores[a]}–${S.scores[b]}`;
+  overlay({title: !w ? 'Tie!' : w === me ? 'You win!' : `${label(room, w)} wins!`, big, text: `${label(room, a)} vs ${label(room, b)} · ${NET_GAMES[S.game]}`,
+    go: isHost ? 'Back to the room' : 'OK', onGo: () => { if(isHost && roomCode){ H = null; net.set(`rooms/${roomCode}/in`, null); net.set(`rooms/${roomCode}/state`, {phase:'lobby'}); } },
+    alt: 'Leave room', onAlt: leaveRoom});
+}
+function timerLoop(){
+  cancelAnimationFrame(timerRaf);
+  const step = () => {
+    if(!roomCode || $('net').hidden) return;
+    const S = room && room.state, bar = $('netTimer');
+    if(S && S.phase === 'ask' && S.deadline){
+      const span = S.deadline - S.openAt, left = Math.max(0, S.deadline - net.now());
+      bar.style.width = (100 * Math.min(1, left / span)) + '%'; bar.classList.toggle('low', left < 2000);
+      $('netClock').textContent = (Math.ceil(left / 100) / 10).toFixed(1) + ' s';
+    } else { bar.style.width = '0%'; $('netClock').textContent = ''; }
+    if(S && room.host !== net.uid && ((S.phase === 'ask' && S.deadline && net.now() > S.deadline + 2500) || (S.phase === 'show' && net.now() > S.nextAt + 2500) || (room.players[room.host] || {}).off)) say('netSay', `Waiting for ${label(room, room.host)}'s phone…`);
+    timerRaf = requestAnimationFrame(step);
+  };
+  timerRaf = requestAnimationFrame(step);
+}
+function netTap(el){
+  const S = room && room.state; if(!S || S.phase !== 'ask') return;
+  const me = net.uid;
+  if(S.game === 'sm'){ if(S.turn === me) sendInput('flip', +el.dataset.i); return; }
+  if(S.game === 'ed'){ sendInput('ans', el.dataset.i); el.classList.add('press'); setTimeout(() => el.classList.remove('press'), 150); return; }
+  const n = el.dataset.n;
+  el.classList.add('press'); setTimeout(() => el.classList.remove('press'), 150);
+  if(S.game === 'pq'){ if(S.style !== 'race'){ const pl = S.players[me], pd = PADS[pl.pad] && Math.min(pl.pq||0,9) < 9 ? PADS[pl.pad] : PADS.piano; playNote(pd.sound, pd.octave ? down8(n) : n); } sendInput('ans', n); return; }
+  playNote('piano', n);
+  const st = S.bk.stage;
+  if(st === 'set'){ if(bkTaps.length < 8){ bkTaps.push(n); paintNet(S); } return; }
+  bkTaps.push(n); paintNet(S);
+  if(bkTaps.length === S.bk.pattern.length){ sendInput('try', bkTaps.slice()); }
+}
+
+/* ---------- wiring ---------- */
+function stepLevel(mode, d){
+  const s = P()[mode], v = Math.min(LADDERS[mode].length-1, Math.max(0, s.level + d));
+  if(v !== s.level){ s.level = v; s.window = []; persist(); }
+  paintPicker();
+}
+function paintTitle(){ document.querySelectorAll('#who .chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.p === save.who)); }
+async function letsGo(){
+  const b = $('letsgo'); b.disabled = true; b.textContent = 'Loading…';
+  try { await initAudio(); } catch(e) { b.disabled = false; b.textContent = 'Sound failed, tap to retry'; return; }
+  b.disabled = false; b.textContent = "Let's go";
+  stungCard = -1; activeCard = -1; show('picker'); setActive(save.card);
+}
+
+function start(data){
+  try { const s = data && data.save || JSON.parse(STORE().getItem('noteNinjas1')); if(s && s.players) save = migrate(s); } catch(e) {}
+  applySkin(); paintTitle(); applyMute();
+  $('skinBtn').addEventListener('click', () => { show('skins'); paintSkins(); });
+  $('skinBack').addEventListener('click', () => show('picker'));
+  $('skinGrid').addEventListener('click', e => { const b = e.target.closest('.skinb'); if(b){ save.skin = b.dataset.v; persist(); applySkin(); paintSkins(); } });
+  $('noteSw').addEventListener('click', e => { const b = e.target.closest('button'); if(b){ skinSel = b.dataset.n; paintSkins(); } });
+  $('pal').addEventListener('click', e => { const b = e.target.closest('button'); if(b){ save.colors[skinSel] = b.dataset.c; persist(); applySkin(); paintSkins(); } });
+  $('rainbow').addEventListener('click', () => { save.colors = {...RAINBOW}; persist(); applySkin(); paintSkins(); });
+  $('joinCode').addEventListener('keydown', e => { if(e.key === 'Enter') joinRoom(e.target.value); });
+  $('lobby').addEventListener('click', e => {
+    const c = e.target.closest('[data-nset] .chip'); if(c && !c.disabled){ const k = c.closest('[data-nset]').dataset.nset; return setCfg(k, k === 'rounds' ? +c.dataset.v : c.dataset.v); }
+    const k = e.target.closest('[data-clk]'); if(k && !k.disabled && room) setCfg('clock', Math.min(99, Math.max(1, (room.cfg.clock|0) + +k.dataset.clk)));
+  });
+  $('lobClock').addEventListener('change', e => setCfg('clock', Math.min(99, Math.max(1, parseInt(e.target.value, 10) || 5))));
+  $('lobStart').addEventListener('click', async () => { if(!room || room.host !== net.uid || order(room).length < 2) return; const S = hostStart(room); await net.set(`rooms/${roomCode}/in`, null); net.set(`rooms/${roomCode}/state`, S); });
+  $('lobLeave').addEventListener('click', leaveRoom);
+  $('netLeave').addEventListener('click', leaveRoom);
+  $('netPad').addEventListener('pointerdown', e => { const el = e.target.closest('.pk,.ib,.card'); if(el && !el.disabled){ e.preventDefault(); netTap(el); } });
+  $('netAgain').addEventListener('click', () => { const S = room && room.state, q = S && myQ(S); if(q && S.phase === 'ask') playNote(q.inst, q.play); });
+  $('bkUndo').addEventListener('click', () => { bkTaps.pop(); if(room && room.state) paintNet(room.state); });
+  $('bkDone').addEventListener('click', () => { if(bkTaps.length) sendInput('set', bkTaps.slice()); });
+  $('who').addEventListener('click', e => { const c = e.target.closest('.chip'); if(c){ save.who = c.dataset.p; persist(); paintTitle(); } });
+  $('letsgo').addEventListener('click', letsGo);
+  $('whoBtn').addEventListener('click', () => show('title'));
+  $('mute').addEventListener('click', () => { save.mute = !save.mute; persist(); applyMute(); if(save.mute) stopMusic(); else if(!$('picker').hidden) startMusic(); });
+  $('picker').addEventListener('click', e => {
+    const st = e.target.closest('[data-step]'); if(st) return stepLevel(st.dataset.step, +st.dataset.d);
+    const ch = e.target.closest('[data-set] .chip'); if(ch){ save[ch.closest('[data-set]').dataset.set] = ch.dataset.v; persist(); return paintPicker(); }
+    const nb = e.target.closest('[data-net]'); if(nb) return nb.dataset.net === 'create' ? createRoom() : joinRoom($('joinCode').value);
+    const pl = e.target.closest('[data-play]'); if(!pl) return;
+    const g = pl.dataset.play;
+    if(g === 'pq') startPq(); else if(g === 'sm') startSm(); else if(save.edPlayers === '2') startDuel(); else startEdSolo();
+  });
+  $('prev').addEventListener('click', () => goCard(activeCard-1));
+  $('next').addEventListener('click', () => goCard(activeCard+1));
+  document.addEventListener('keydown', e => { if($('picker').hidden || !$('over').hidden || (e.target.matches && e.target.matches('input'))) return; if(e.key === 'ArrowLeft') goCard(activeCard-1); if(e.key === 'ArrowRight') goCard(activeCard+1); });
+  const io = new IntersectionObserver(es => es.forEach(en => { if(en.isIntersecting) setActive([...$('track').children].indexOf(en.target)); }), {root:$('track'), threshold:.6});
+  [...$('track').children].forEach(c => io.observe(c));
+  document.querySelectorAll('.home').forEach(b => b.addEventListener('click', () => { sm = null; duel = null; show('picker'); }));
+  $('pqAgain').addEventListener('click', () => { const q = pq.q; if(!q || !q.t0 || q.done) return; if(q.seq){ q.pos = 0; q.t0 = 0; pqPlayQ(q, () => { if(pq.q === q) q.t0 = performance.now(); }); } else pqPlayQ(q); });
+  $('edAgain').addEventListener('click', () => { if(ed.q && ed.q.t0) playNote(ed.q.inst, ed.q.note); });
+  $('duelAgain').addEventListener('click', () => { if(duel && duel.q && duel.open) playNote(duel.q.inst, duel.q.note); });
+  $('kb').addEventListener('pointerdown', e => { const k = e.target.closest('.pk'); if(k && !k.disabled){ e.preventDefault(); pqAnswer(k); } });
+  $('kb').addEventListener('keydown', e => { const k = e.target.closest('.pk'); if(k && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); pqAnswer(k); } });
+  $('padChips').addEventListener('click', e => { const c = e.target.closest('.chip'); if(c){ P().pq.pad = c.dataset.v; persist(); paintPicker(); } });
+  $('smGrid').addEventListener('click', e => { const c = e.target.closest('.card'); if(c) smTap(+c.dataset.i); });
+  $('edGrid').addEventListener('click', e => { const b = e.target.closest('.ib'); if(b) edAnswer(b); });
+  $('duel').addEventListener('pointerdown', e => { const b = e.target.closest('.ib'); if(b){ e.preventDefault(); duelTap(b); } });
+  $('duel').addEventListener('keydown', e => { const b = e.target.closest('.ib'); if(b && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); duelTap(b); } });
+  $('ovGo').addEventListener('click', () => { clearTimers(); $('over').hidden = true; const f = ovGo; ovGo = null; if(f) f(); });
+  $('ovAlt').addEventListener('click', () => { $('over').hidden = true; const f = ovAlt; ovAlt = null; if(f) f(); });
+  document.addEventListener('visibilitychange', () => { if(document.hidden) stopMusic(); else { if(roomCode) wake(true); if(ctx && ctx.state !== 'running') ctx.resume().catch(() => {}); if(!$('picker').hidden) startMusic(); } });
+  document.addEventListener('pointerdown', () => { if(ctx && ctx.state !== 'running') ctx.resume().catch(() => {}); if(silentEl && silentEl.paused) silentEl.play().catch(() => {}); }, true);
+  window.claude?.hot?.snapshot?.(() => ({save}));
+  if(location.search.includes('nntest')) window.__nn = {bk:() => [bkTaps.slice(), bkTaps.st], room:() => room, net:() => net, pq:() => pq, sm:() => sm, ed:() => ed, duel:() => duel, save:() => save, music:() => music.on};
+}
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+}
+</script>
+</body>
+</html>

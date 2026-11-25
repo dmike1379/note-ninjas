@@ -47,7 +47,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .tkey.no{background:var(--bad);animation:none}
 @keyframes stglow{to{box-shadow:0 0 18px var(--gold)}}
 .sthand{width:min(150px,38vw);height:auto;flex:none}
-.sthand[hidden]{display:none}
+.sthand[hidden]{display:none!important}
 .sthand .fg{fill:var(--key);stroke:#ddd3bf;stroke-width:2;transition:fill .15s}
 .sthand .fg.on{fill:var(--gold);stroke:#fff6cc}
 .sthand .palm{fill:var(--key);stroke:#ddd3bf;stroke-width:2}
@@ -57,6 +57,17 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .tkey[data-f]::before{content:attr(data-f);position:absolute;top:8px;left:50%;transform:translateX(-50%);width:24px;height:24px;border-radius:50%;background:var(--keyink);color:var(--gold);font:400 14px/24px Bungee,sans-serif;text-align:center}
 .tkb[data-f]::before{width:20px;height:20px;font-size:12px;line-height:20px;background:var(--gold);color:var(--keyink)}
 #stFingBtn[aria-pressed=false]{opacity:.45}
+.stkb[hidden],.sttp[hidden],.chip[hidden]{display:none}
+.sttp{display:flex;flex-direction:column;align-items:center;gap:14px;padding:14px 6px 16px;background:var(--bg2);border-radius:18px;box-shadow:inset 0 0 0 2px var(--line);touch-action:manipulation}
+.valves{display:flex;gap:clamp(14px,6vw,34px);justify-content:center}
+.valve{width:clamp(64px,20vw,92px);height:clamp(64px,20vw,92px);border-radius:50%;background:var(--key);color:var(--keyink);font:400 clamp(22px,7vw,32px) Bungee,sans-serif;box-shadow:0 8px 0 #ddd3bf;transition:transform .08s,box-shadow .08s,background .15s}
+.valve.down{transform:translateY(6px);box-shadow:0 2px 0 #ddd3bf;background:#d9ccb2}
+.valve.lit{background:#fff3c4}
+.valve.next{background:var(--gold);animation:stglow .8s ease-in-out infinite alternate}
+.valve.next.down{background:var(--good);animation:none}
+.blow{min-height:56px;padding:0 34px;border-radius:28px;background:var(--orange);color:#fff;font:400 20px Bungee,sans-serif;box-shadow:0 5px 0 rgba(0,0,0,.3)}
+.blow.got{background:var(--good);color:var(--keyink)}
+.blow.no{background:var(--bad)}
 .stform{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px}
 .stform[hidden]{display:none}
 .stform>div{background:var(--bg2);border-radius:20px;padding:18px;width:min(460px,100%);display:flex;flex-direction:column;gap:10px;box-shadow:0 0 0 2px var(--line)}
@@ -367,6 +378,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
         <p class="gtag">Famous tunes, scales and chords. Follow the glowing keys.</p>
         <div class="opts">
           <div class="row"><span class="lab">Learn</span><div class="chips" data-set="stCat"><button class="chip" data-v="tunes">Tunes</button><button class="chip" data-v="scales">Scales</button><button class="chip" data-v="chords">Chords</button></div></div>
+          <div class="row"><span class="lab">Play on</span><div class="chips" data-set="stInst"><button class="chip" data-v="piano">Piano</button><button class="chip" data-v="trumpet">Trumpet</button></div></div>
           <p class="best" id="stInfo"></p>
         </div>
         <button class="go" data-play="st">Play</button>
@@ -429,6 +441,10 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
       <div class="strow"><button class="again" id="stHear">Hear it</button><button class="again" id="stRestart">Start over</button></div>
     </div>
     <div class="stkb" id="stKb"></div>
+    <div class="sttp" id="stTp" hidden>
+      <div class="valves"><button class="valve" data-v="1" aria-pressed="false" aria-label="Valve 1">1</button><button class="valve" data-v="2" aria-pressed="false" aria-label="Valve 2">2</button><button class="valve" data-v="3" aria-pressed="false" aria-label="Valve 3">3</button></div>
+      <button class="blow" id="stBlow">Blow 🎺</button>
+    </div>
     <div class="stform" id="stForm" hidden><div>
       <h3>Add a tune</h3>
       <input id="stName" maxlength="40" placeholder="Name, like My Song" aria-label="Tune name">
@@ -575,7 +591,7 @@ const rnd = a => a[Math.floor(Math.random()*a.length)];
 
 /* ---------- save ---------- */
 const mkP = () => ({pq:{level:0,window:[],best:0,pad:'piano'}, ed:{level:0,window:[],best:0}, sm:{easy:0,normal:0,hard:0}});
-let save = {v:2, who:'Red Ninja', mute:false, card:0, skin:'dojo', colors:{...RAINBOW}, smPlayers:'1', smSize:'easy', edPlayers:'1', stCat:'tunes', stFingers:true, stPick:{}, stMine:[], stDone:{}, players:{'Red Ninja':mkP(), 'Blue Ninja':mkP()}};
+let save = {v:2, who:'Red Ninja', mute:false, card:0, skin:'dojo', colors:{...RAINBOW}, smPlayers:'1', smSize:'easy', edPlayers:'1', stCat:'tunes', stInst:'piano', stFingers:true, stPick:{}, stMine:[], stDone:{}, players:{'Red Ninja':mkP(), 'Blue Ninja':mkP()}};
 function migrate(s){
   const out = Object.assign({}, save, s);
   out.players = {};
@@ -599,6 +615,7 @@ function migrate(s){
   if(!out.stPick || typeof out.stPick !== 'object') out.stPick = {};
   if(!out.stDone || typeof out.stDone !== 'object') out.stDone = {};
   out.stFingers = out.stFingers !== false;
+  if(!['piano','trumpet'].includes(out.stInst)) out.stInst = 'piano';
   if(!SKINS[out.skin]) out.skin = 'dojo';
   out.colors = Object.assign({...RAINBOW}, out.colors || {});
   out.v = 2; return out;
@@ -851,6 +868,9 @@ function paintPicker(){
   $('edInfo').textContent = save.edPlayers === '2' ? `${save.who} vs ${other()} · ${DUEL_ROUNDS} rounds · ${LADDERS.ed[p.ed.level].text}` : `${LADDERS.ed[p.ed.level].text} · Best score ${p.ed.best}`;
   const b = p.sm[save.smSize];
   $('smInfo').textContent = save.smPlayers === '2' ? `${save.who} vs ${other()} · take turns` : (b ? `Best: ${b} turns on ${save.smSize}` : `${SM_SIZES[save.smSize].length} pairs · fewest turns wins`);
+  const chordChip = document.querySelector('[data-set="stCat"] [data-v="chords"]');
+  if(chordChip) chordChip.hidden = save.stInst === 'trumpet';
+  if(save.stInst === 'trumpet' && save.stCat === 'chords') save.stCat = 'tunes';
   const sl = stList(save.stCat), sd = sl.filter(x => save.stDone[stKey(save.stCat, x)]).length;
   $('stInfo').textContent = `${sl.length} to learn · ${sd} done`;
   document.querySelectorAll('[data-set]').forEach(g => g.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.v === save[g.dataset.set])));
@@ -911,9 +931,15 @@ const ST_WHITES = [60,62,64,65,67,69,71,72,74,76,77,79,81];
 const ST_BLACKS = [61,63,66,68,70,73,75,78,80];
 const ST_PC = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const ST_SAMPLE = ['C4','Db4','D4','Eb4','E4','F4','Gb4','G4','Ab4','A4','Bb4','B4','C5'];
-const st = {cat:'tunes', item:null, steps:[], pos:0, got:new Set(), demo:false, built:false};
-function stList(cat){ return cat === 'tunes' ? [...ST_LIB.tunes.map(([name, notes, fingers]) => ({name, notes, fingers})), ...save.stMine.map(m => ({name:m.name, notes:m.notes, mine:true}))] : ST_LIB[cat].map(([name, notes, fingers]) => ({name, notes, fingers})); }
-const stKey = (cat, x) => cat + ':' + (x.mine ? '★' : '') + x.name;
+const st = {cat:'tunes', item:null, steps:[], pos:0, got:new Set(), vd:new Set(), demo:false, built:false};
+const stTp = () => save.stInst === 'trumpet';
+const stPk = cat => (stTp() ? 't:' : '') + cat;
+function stList(cat){
+  const all = stListAll(cat);
+  return stTp() ? all.filter(x => { try { return stParse(x.notes).every(q => q.notes.length === 1); } catch(e) { return false; } }) : all;
+}
+function stListAll(cat){ return cat === 'tunes' ? [...ST_LIB.tunes.map(([name, notes, fingers]) => ({name, notes, fingers})), ...save.stMine.map(m => ({name:m.name, notes:m.notes, mine:true}))] : ST_LIB[cat].map(([name, notes, fingers]) => ({name, notes, fingers})); }
+const stKey = (cat, x) => stPk(cat) + ':' + (x.mine ? '★' : '') + x.name;
 function stParse(txt){
   const steps = [];
   for(const tok of String(txt).trim().split(/\s+/)){
@@ -933,6 +959,51 @@ function stParse(txt){
   if(!steps.length) throw 'Type some notes first';
   if(steps.length > 200) throw 'Keep it under 200 notes';
   return steps;
+}
+const ST_TP = {54:'123',55:'13',56:'23',57:'12',58:'1',59:'2',60:'',61:'123',62:'13',63:'23',64:'12',65:'1',66:'2',67:'',68:'23',69:'12',70:'1',71:'2',72:'',73:'12',74:'1',75:'2',76:'',77:'1',78:'2',79:'',80:'23',81:'12',82:'1',83:'2',84:''};
+const ST_TPS = {60:'C4',62:'D4',64:'E4',65:'F4',67:'G4',69:'A4',71:'B4',72:'C5'};
+const stVal = s => s && s.notes.length === 1 ? ST_TP[s.notes[0].midi] : undefined;
+const stValTxt = v => v ? 'Valves ' + v.split('').join(' + ') : 'Open · no valves';
+function stValves(lit){
+  const step = st.steps[st.pos], need = st.demo ? '' : (stVal(step) ?? '');
+  document.querySelectorAll('#stTp .valve').forEach(b => {
+    const v = b.dataset.v, dn = st.vd.has(v);
+    b.classList.toggle('down', dn); b.setAttribute('aria-pressed', dn);
+    b.classList.toggle('next', !st.demo && !!step && save.stFingers && need.includes(v));
+    b.classList.toggle('lit', lit !== undefined && lit.includes(v));
+  });
+  const show = lit !== undefined ? lit : (step && !st.demo ? need : undefined);
+  $('stFing').textContent = save.stFingers && show !== undefined ? stValTxt(show) : '';
+}
+function stBlow(){
+  if(st.demo){ clearTimers(); st.demo = false; }
+  const combo = ['1','2','3'].filter(v => st.vd.has(v)).join(''), step = st.steps[st.pos], b = $('stBlow');
+  const near = t => +Object.keys(ST_TP).filter(k => ST_TP[k] === combo).sort((a, c) => Math.abs(a - t) - Math.abs(c - t))[0];
+  if(!step){ stSound([near(67)], 1); return; }
+  const target = step.notes[0].midi;
+  if(ST_TP[target] === combo){
+    stSound([target], step.dur);
+    b.classList.add('got'); setTimeout(() => b.classList.remove('got'), 250);
+    st.pos++;
+    if(st.pos >= st.steps.length){
+      stPaint(); save.stDone[stKey(st.cat, st.item)] = true; persist();
+      $('stSay').textContent = 'You played it!';
+      later(() => SFX.win(), 500);
+      const o = $('stSel').selectedOptions[0]; if(o && !o.textContent.startsWith('✓')) o.textContent = '✓ ' + o.textContent;
+      return;
+    }
+    $('stSay').textContent = st.pos === 1 ? 'Nice! Keep going' : (st.steps.length - st.pos <= 2 ? 'Almost there!' : 'Keep going');
+    stPaint();
+  } else {
+    stSound([near(target)], 1);
+    b.classList.add('no'); setTimeout(() => b.classList.remove('no'), 350);
+    $('stSay').textContent = save.stFingers ? 'Press the glowing valves, then Blow' : 'Not quite. Check your valves';
+  }
+}
+function stValve(b){
+  if(st.demo){ clearTimers(); st.demo = false; }
+  const v = b.dataset.v; st.vd.has(v) ? st.vd.delete(v) : st.vd.add(v);
+  stPaint();
 }
 const ST_FN = ['', 'thumb', 'pointer', 'middle', 'ring', 'pinky'];
 const stWi = m => Math.floor(m / 12) * 7 + [0,.5,1,1.5,2,3,3.5,4,4.5,5,5.5,6][m % 12];
@@ -957,8 +1028,9 @@ function stFingers(steps, fixed){
   });
 }
 function stHand(fs){
+  if(stTp()){ $('stHand').toggleAttribute('hidden', true); return; }
   const on = save.stFingers;
-  $('stHand').hidden = !on;
+  $('stHand').toggleAttribute('hidden', !on);
   document.querySelectorAll('#stHand .fg').forEach(f => f.classList.toggle('on', on && fs.includes(+f.dataset.fn)));
   $('stFing').textContent = on && fs.length ? (fs.length === 1 ? `Finger ${fs[0]} · ${ST_FN[fs[0]]}` : 'Fingers ' + fs.join(' + ')) : '';
 }
@@ -966,11 +1038,14 @@ function stSound(midis, dur){
   if(!ctx || !loaded) return;
   if(ctx.state !== 'running') ctx.resume();
   const t = ctx.currentTime, v = (GAIN.piano || 1) / Math.sqrt(midis.length), len = Math.max(.35, dur * ST_BEAT / 1000);
-  for(const m of midis){
-    const sm = Math.min(72, Math.max(60, m)), b = buffers['piano:' + ST_SAMPLE[sm - 60]]; if(!b) continue;
+  const tp = stTp(), tv = tp ? (GAIN.trumpet || 1) / Math.sqrt(midis.length) : v;
+  for(const m0 of midis){
+    const m = tp ? m0 - 2 : m0;
+    const sm = tp ? +Object.keys(ST_TPS).sort((a, c) => Math.abs(a - m) - Math.abs(c - m))[0] : Math.min(72, Math.max(60, m));
+    const b = buffers[tp ? 'trumpet:' + ST_TPS[sm] : 'piano:' + ST_SAMPLE[sm - 60]]; if(!b) continue;
     const src = ctx.createBufferSource(), g = ctx.createGain();
     src.buffer = b; src.playbackRate.value = Math.pow(2, (m - sm) / 12);
-    g.gain.setValueAtTime(v, t); g.gain.setValueAtTime(v, t + len); g.gain.linearRampToValueAtTime(0, t + len + .35);
+    g.gain.setValueAtTime(tv, t); g.gain.setValueAtTime(tv, t + len); g.gain.linearRampToValueAtTime(0, t + len + .35);
     src.connect(g).connect(inBus); src.start(t); src.stop(t + len + .4);
   }
 }
@@ -989,7 +1064,7 @@ function stPaint(){
     k.classList.toggle('next', nx);
     if(nx && save.stFingers) k.dataset.f = step.fingers[need.indexOf(m)]; else delete k.dataset.f;
   });
-  stHand(step && !st.demo ? step.fingers.filter((f, i) => !st.got.has(need[i])) : []);
+  if(stTp()) stValves(); else stHand(step && !st.demo ? step.fingers.filter((f, i) => !st.got.has(need[i])) : []);
   const box = $('stNotes');
   box.innerHTML = st.steps.map((s, i) => `<span class="stn${i < st.pos ? ' done' : i === st.pos ? ' now' : ''}">${s.notes.map(n => n.label).join('·')}</span>`).join('');
   const cur = box.children[Math.min(st.pos, st.steps.length - 1)];
@@ -997,18 +1072,18 @@ function stPaint(){
   $('stScore').textContent = `${Math.min(st.pos, st.steps.length)}/${st.steps.length}`;
 }
 function stFill(){
-  const list = stList(st.cat), pick = Math.min(list.length - 1, Math.max(0, save.stPick[st.cat] | 0));
+  const list = stList(st.cat), pick = Math.min(list.length - 1, Math.max(0, save.stPick[stPk(st.cat)] | 0));
   $('stSel').innerHTML = list.map((x, i) => `<option value="${i}"${i === pick ? ' selected' : ''}>${save.stDone[stKey(st.cat, x)] ? '✓ ' : ''}${x.mine ? '★ ' : ''}${x.name.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}</option>`).join('');
-  $('stPill').textContent = st.cat === 'tunes' ? 'Tunes' : st.cat === 'scales' ? 'Scales' : 'Chords';
+  $('stPill').textContent = (st.cat === 'tunes' ? 'Tunes' : st.cat === 'scales' ? 'Scales' : 'Chords') + (stTp() ? ' 🎺' : '');
   $('stAdd').hidden = st.cat !== 'tunes';
   stLoad(pick);
 }
 function stLoad(i){
   clearTimers(); st.demo = false;
-  const list = stList(st.cat); st.item = list[i]; save.stPick[st.cat] = i; persist();
+  const list = stList(st.cat); st.item = list[i]; save.stPick[stPk(st.cat)] = i; persist();
   try { st.steps = stParse(st.item.notes); stFingers(st.steps, st.item.fingers); } catch(e) { st.steps = []; }
   st.pos = 0; st.got = new Set();
-  $('stSay').textContent = st.cat === 'chords' ? 'Press all the glowing keys' : 'Tap Hear it, or start on the glowing key';
+  $('stSay').textContent = stTp() ? 'Tap Hear it, or set the valves and Blow' : st.cat === 'chords' ? 'Press all the glowing keys' : 'Tap Hear it, or start on the glowing key';
   stPaint();
 }
 function stDemo(){
@@ -1019,12 +1094,12 @@ function stDemo(){
     later(() => {
       const ms = s.notes.map(n => n.midi); stSound(ms, s.dur);
       document.querySelectorAll('#stKb .tkey').forEach(k => k.classList.toggle('lit', ms.includes(+k.dataset.m)));
-      stHand(s.fingers || []);
+      if(stTp()) stValves(stVal(s) ?? ''); else stHand(s.fingers || []);
       [...$('stNotes').children].forEach((c, k) => c.classList.toggle('now', k === i));
     }, t);
     t += s.dur * ST_BEAT;
   });
-  later(() => { st.demo = false; stPaint(); $('stSay').textContent = st.pos ? 'Your turn. Keep going!' : 'Your turn. Follow the glowing keys'; }, t + 300);
+  later(() => { st.demo = false; stPaint(); $('stSay').textContent = st.pos ? 'Your turn. Keep going!' : stTp() ? 'Your turn. Set the valves, then Blow' : 'Your turn. Follow the glowing keys'; }, t + 300);
 }
 function stTap(k){
   const m = +k.dataset.m;
@@ -1058,12 +1133,14 @@ function stOpenForm(){ $('stName').value = ''; $('stText').value = ''; $('stErr'
 function stSaveForm(){
   const name = $('stName').value.trim(), notes = $('stText').value.trim();
   if(!name){ $('stErr').textContent = 'Give it a name'; return; }
-  try { stParse(notes); } catch(e) { $('stErr').textContent = e; return; }
-  save.stMine.push({name, notes}); save.stPick.tunes = stList('tunes').length - 1; persist();
+  try { const ps = stParse(notes); if(stTp() && ps.some(q => q.notes.length > 1)) throw 'A trumpet plays one note at a time. Use + only on piano'; } catch(e) { $('stErr').textContent = e; return; }
+  save.stMine.push({name, notes}); save.stPick[stPk('tunes')] = stList('tunes').length - 1; persist();
   $('stForm').hidden = true; stFill(); toast('Saved ' + name);
 }
 async function startSt(){
-  st.cat = save.stCat; show('st'); stBuildKb(); $('stFingBtn').setAttribute('aria-pressed', save.stFingers); stFill();
+  if(stTp() && save.stCat === 'chords') save.stCat = 'tunes';
+  st.cat = save.stCat; st.vd = new Set(); show('st'); stBuildKb();
+  $('stKb').hidden = stTp(); $('stTp').hidden = !stTp(); if(stTp()) $('stHand').toggleAttribute('hidden', true); $('stFingBtn').setAttribute('aria-pressed', save.stFingers); stFill();
   try { await initAudio(); } catch(e) {}
 }
 
@@ -1891,8 +1968,10 @@ function start(data){
   $('stKb').addEventListener('pointerdown', e => { const k = e.target.closest('.tkey'); if(k){ e.preventDefault(); stTap(k); } });
   $('stKb').addEventListener('keydown', e => { const k = e.target.closest('.tkey'); if(k && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); stTap(k); } });
   $('stSel').addEventListener('change', e => stLoad(+e.target.value));
+  $('stTp').addEventListener('pointerdown', e => { const v = e.target.closest('.valve'); if(v){ e.preventDefault(); stValve(v); } else if(e.target.closest('#stBlow')){ e.preventDefault(); stBlow(); } });
+  $('stTp').addEventListener('keydown', e => { if(e.key !== 'Enter' && e.key !== ' ') return; const v = e.target.closest('.valve'); if(v){ e.preventDefault(); stValve(v); } else if(e.target.closest('#stBlow')){ e.preventDefault(); stBlow(); } });
   $('stHear').addEventListener('click', () => { if(st.steps.length) stDemo(); });
-  $('stRestart').addEventListener('click', () => stLoad(save.stPick[st.cat] | 0));
+  $('stRestart').addEventListener('click', () => stLoad(save.stPick[stPk(st.cat)] | 0));
   $('stAdd').addEventListener('click', stOpenForm);
   $('stFingBtn').addEventListener('click', () => { save.stFingers = !save.stFingers; persist(); $('stFingBtn').setAttribute('aria-pressed', save.stFingers); stPaint(); });
   $('stCancel').addEventListener('click', () => $('stForm').hidden = true);

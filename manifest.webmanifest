@@ -6,7 +6,7 @@
   "start_url": "/note-ninjas/",
   "scope": "/note-ninjas/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#0d3b2e",
   "theme_color": "#0d3b2e",
   "icons": [

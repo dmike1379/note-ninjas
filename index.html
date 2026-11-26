@@ -280,6 +280,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .notesw button[aria-pressed=true]{outline:3px solid var(--ink);outline-offset:2px}
 .pal{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
 .pal button{aspect-ratio:1;border-radius:50%;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25),0 0 0 2px var(--line)}
+@media(orientation:landscape) and (max-height:520px){.app{max-width:none}.gcard .art{display:none}.gcard{overflow-y:auto}}
 @media(max-height:640px){.art{min-height:80px}.gcard{gap:8px;padding:10px}.go{min-height:52px;font-size:20px}}
 @media(prefers-reduced-motion:reduce){.jump,.shake,.glow,.ib.glow,.fl,.flip,.face,.zap,.lunge,.wave,.card.turning{animation:none!important}.face{opacity:0}}
 </style>

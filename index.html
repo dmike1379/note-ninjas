@@ -313,7 +313,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
         <p class="gtag">Hear a note. Find the key.</p>
         <div class="opts">
           <div class="row"><span class="lab">Level</span><div class="stepper"><button data-step="pq" data-d="-1" aria-label="Level down">‹</button><output id="pqLv">Level 1</output><button data-step="pq" data-d="1" aria-label="Level up">›</button></div></div>
-          <div class="row"><span class="lab">Pad</span><div class="chips" id="padChips"><button class="chip" data-v="piano">Piano</button><button class="chip" data-v="staff">Staff</button><button class="chip" data-v="violin">Violin</button><button class="chip" data-v="guitar">Guitar</button><button class="chip" data-v="ukulele">Uke</button><button class="chip" data-v="cello">Cello</button></div></div>
+          <div class="row"><span class="lab">Pad</span><div class="chips" id="padChips"><button class="chip" data-v="piano">Piano</button><button class="chip" data-v="trumpet">Trumpet</button><button class="chip" data-v="staff">Staff</button><button class="chip" data-v="violin">Violin</button><button class="chip" data-v="guitar">Guitar</button><button class="chip" data-v="ukulele">Uke</button><button class="chip" data-v="cello">Cello</button></div></div>
           <p class="best" id="pqInfo"></p>
         </div>
         <button class="go" data-play="pq">Play</button>
@@ -547,6 +547,7 @@ const BLACKS = ['Db4','Eb4','Gb4','Ab4','Bb4'];
 const PADS = {
   piano:   {name:'Piano', sound:'piano'},
   staff:   {name:'Staff', sound:'piano'},
+  trumpet: {name:'Trumpet', sound:'trumpet', keys:true},
   violin:  {name:'Violin', sound:'violin', strings:['G','D','A','E'], rows:4, map:{C4:[0,3],D4:[1,0],E4:[1,1],F4:[1,2],G4:[1,3],A4:[2,0],B4:[2,1],C5:[2,2]}, note:'Violin, first position. Numbers are fingers, 0 is an open string.'},
   guitar:  {name:'Guitar', sound:'guitar', frets:true, strings:['E','A','D','G','B','E'], rows:4, map:{C4:[1,3],D4:[2,0],E4:[2,2],F4:[2,3],G4:[3,0],A4:[3,2],B4:[4,0],C5:[4,1]}, note:'Guitar, first position. Numbers are frets. A real guitar sounds an octave lower than written.'},
   ukulele: {name:'Ukulele', sound:'guitar', frets:true, strings:['G','C','E','A'], rows:4, map:{C4:[1,0],D4:[1,2],E4:[2,0],F4:[2,1],G4:[0,0],A4:[3,0],B4:[3,2],C5:[3,3]}, note:'Ukulele (G C E A). Numbers are frets. Plays a nylon guitar sound.'},
@@ -1186,13 +1187,15 @@ function stringPad(id){
   }
   return h + `</div><p class="fbnote">${pd.note}</p>`;
 }
+const padClass = id => 'kb pad-' + (PADS[id].strings ? 'strings' : PADS[id].keys ? 'piano' : id);
+const padHtml = id => id === 'piano' || PADS[id].keys ? pianoPad() : id === 'staff' ? staffPad() : stringPad(id);
 function buildPad(){
   const id = pqPad();
   if(pq.built === id) return;
   pq.built = id;
   const kb = $('kb');
-  kb.className = 'kb pad-' + (PADS[id].strings ? 'strings' : id);
-  kb.innerHTML = id === 'piano' ? pianoPad() : id === 'staff' ? staffPad() : stringPad(id);
+  kb.className = padClass(id);
+  kb.innerHTML = padHtml(id);
 }
 function pqPaint(){
   buildPad();
@@ -1789,8 +1792,8 @@ function netPad(S){
   } else {
     const pad = S.game === 'bk' ? 'piano' : key.slice(2).replace(/\d+$/, '');
     el.style.gridTemplateRows = ''; el.style.gridTemplateColumns = '';
-    el.className = 'kb pad-' + (PADS[pad].strings ? 'strings' : pad);
-    el.innerHTML = pad === 'piano' ? pianoPad() : pad === 'staff' ? staffPad() : stringPad(pad);
+    el.className = padClass(pad);
+    el.innerHTML = padHtml(pad);
   }
 }
 function paintNet(S){

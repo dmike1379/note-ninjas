@@ -280,7 +280,11 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .notesw button[aria-pressed=true]{outline:3px solid var(--ink);outline-offset:2px}
 .pal{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
 .pal button{aspect-ratio:1;border-radius:50%;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25),0 0 0 2px var(--line)}
-@media(orientation:landscape) and (max-height:520px){.app{max-width:none}.gcard .art{display:none}.gcard{overflow-y:auto}}
+@media(orientation:landscape) and (max-height:520px){.app{max-width:none}.gcard .art{display:none}.gcard{overflow-y:auto}
+#st .strow[style]{margin-top:6px!important}#st .stnotes{margin-top:6px;padding:4px}#st .stn{padding:4px 8px}
+#st .stage{flex:none;flex-direction:row;gap:14px;padding:6px 0}#st .sthand{width:auto;height:56px}
+#st .stage .say{font-size:20px;min-width:0}#st .stage .again{min-height:40px;padding:0 16px}
+#st .stkb{flex:1;height:auto;min-height:120px}#st .sttp{flex:1;flex-direction:row;justify-content:center;padding:8px}}
 @media(max-height:640px){.art{min-height:80px}.gcard{gap:8px;padding:10px}.go{min-height:52px;font-size:20px}}
 @media(prefers-reduced-motion:reduce){.jump,.shake,.glow,.ib.glow,.fl,.flip,.face,.zap,.lunge,.wave,.card.turning{animation:none!important}.face{opacity:0}}
 </style>

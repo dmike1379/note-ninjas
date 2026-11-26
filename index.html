@@ -100,6 +100,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .credit a{color:var(--dim)}
 .top{display:flex;align-items:center;gap:10px}
 .round{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);display:grid;place-items:center;flex:none}
+#midiBtn{font-size:20px}#midiBtn[hidden]{display:none}#midiBtn.on{background:var(--good)}
 .pill{font:400 15px Bungee,sans-serif;background:var(--gold);color:var(--keyink);border-radius:16px;padding:6px 12px;white-space:nowrap}
 .score{margin-left:auto;font:400 22px Bungee,sans-serif;color:var(--gold);white-space:nowrap}
 .meter{margin-top:10px;background:var(--panel);border-radius:16px;padding:8px 10px}
@@ -196,6 +197,11 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .big{font:400 72px/1 Bungee,sans-serif;color:var(--pink);display:grid;place-items:center}
 .big svg{width:110px;height:110px}
 .ocard p{margin:0;font-size:17px}
+.instbar{position:fixed;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:6;display:flex;align-items:center;gap:10px;background:var(--bg2);border:2px solid var(--gold);border-radius:18px;padding:10px 12px;font-weight:800;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.instbar[hidden]{display:none}
+.instbar span{flex:1;min-width:0}
+#instGo{background:var(--gold);color:var(--keyink);border-radius:14px;padding:8px 16px;font-weight:800}
+#instNo{width:36px;height:36px;border-radius:50%;background:var(--line);color:var(--ink)}
 .toast{position:fixed;left:50%;bottom:calc(36vh + 40px);transform:translateX(-50%);z-index:4;background:var(--bg2);border:2px solid var(--dim);border-radius:18px;padding:10px 16px;font-weight:800;white-space:nowrap}
 .toast[hidden]{display:none}
 /* answer pads */
@@ -299,6 +305,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
       <button class="who" id="whoBtn" aria-label="Change player"><i id="whoInit">R</i><span id="whoName">Red Ninja</span></button>
       <span class="ptitle">Pick a game</span>
       <button class="round" id="skinBtn" aria-label="Skins and colors"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0 0 18c1.4 0 2-1 2-2 0-1.5-1.2-1.6-1.2-2.8 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4c0-4.2-4-7.5-9-7.5z" fill="currentColor"/><circle cx="7.5" cy="11" r="1.6" fill="#ff4f7b"/><circle cx="10.5" cy="7" r="1.6" fill="#ffcc33"/><circle cx="15" cy="7.5" r="1.6" fill="#5fe39a"/></svg></button>
+      <button class="round" id="midiBtn" aria-label="Connect a music keyboard" hidden>🎹</button>
       <button class="round" id="mute" aria-label="Music on or off"></button>
     </div>
     <div class="track" id="track">
@@ -505,6 +512,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
   <button class="go alt" id="ovAlt" hidden>Back to games</button>
 </div></div>
 <div class="toast" id="toast" hidden></div>
+<div class="instbar" id="instBar" hidden><span>Install Note Ninjas on this phone</span><button id="instGo">Install</button><button id="instNo" aria-label="Not now">✕</button></div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -1107,6 +1115,35 @@ function stDemo(){
     t += s.dur * ST_BEAT;
   });
   later(() => { st.demo = false; stPaint(); $('stSay').textContent = st.pos ? 'Your turn. Keep going!' : stTp() ? 'Your turn. Set the valves, then Blow' : 'Your turn. Follow the glowing keys'; }, t + 300);
+}
+/* ---------- USB / Bluetooth MIDI keyboard ---------- */
+const MIDI_PQ = {60:'C4',61:'Db4',62:'D4',63:'Eb4',64:'E4',65:'F4',66:'Gb4',67:'G4',68:'Ab4',69:'A4',70:'Bb4',71:'B4',72:'C5'};
+let midiAcc = null;
+function midiFold(m, lo, hi){ while(m < lo) m += 12; while(m > hi) m -= 12; return m; }
+function midiNote(m){
+  if(!$('pq').hidden){
+    const n = MIDI_PQ[m >= 60 && m <= 72 ? m : 60 + (m % 12)];
+    const k = n && document.querySelector(`#kb .pk[data-n="${n}"]`);
+    if(k && !k.disabled) pqAnswer(k);
+  } else if(!$('st').hidden && !$('stKb').hidden){
+    const k = document.querySelector(`#stKb .tkey[data-m="${midiFold(m, ST_LO, ST_HI)}"]`);
+    if(k) stTap(k);
+  }
+}
+function midiWire(){
+  if(!midiAcc) return 0;
+  let n = 0;
+  midiAcc.inputs.forEach(inp => { n++; inp.onmidimessage = e => { const [st0, note, vel] = e.data; if((st0 & 0xf0) === 0x90 && vel > 0) midiNote(note); }; });
+  $('midiBtn').classList.toggle('on', n > 0);
+  return n;
+}
+async function midiStart(quiet){
+  try {
+    midiAcc = await navigator.requestMIDIAccess();
+    midiAcc.onstatechange = e => { const n = midiWire(); if(e.port.type === 'input') toast(e.port.state === 'connected' ? '🎹 Keyboard plugged in' : '🎹 Keyboard unplugged'); };
+    const n = midiWire();
+    if(!quiet) toast(n ? '🎹 Keyboard ready. Play the real keys!' : '🎹 Plug in the keyboard, then tap here again');
+  } catch(e) { if(!quiet) toast('🎹 Keyboard not allowed. Check Chrome site settings'); }
 }
 function stTap(k){
   const m = +k.dataset.m;
@@ -1987,6 +2024,11 @@ function start(data){
   $('who').addEventListener('click', e => { const c = e.target.closest('.chip'); if(c){ save.who = c.dataset.p; persist(); paintTitle(); } });
   $('letsgo').addEventListener('click', letsGo);
   $('whoBtn').addEventListener('click', () => show('title'));
+  if(navigator.requestMIDIAccess){
+    $('midiBtn').hidden = false;
+    $('midiBtn').addEventListener('click', () => midiStart(false));
+    try { navigator.permissions.query({name:'midi'}).then(p => { if(p.state === 'granted') midiStart(true); }).catch(() => {}); } catch(e) {}
+  }
   $('mute').addEventListener('click', () => { save.mute = !save.mute; persist(); applyMute(); if(save.mute) stopMusic(); else if(!$('picker').hidden) startMusic(); });
   $('picker').addEventListener('click', e => {
     const st = e.target.closest('[data-step]'); if(st) return stepLevel(st.dataset.step, +st.dataset.d);
@@ -2033,6 +2075,14 @@ function start(data){
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 }
 </script>
-<script>if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
+<script>if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
+(() => {
+  let ev = null; const bar = document.getElementById('instBar');
+  const no = () => { try { return sessionStorage.getItem('nnInstNo'); } catch(e) { return null; } };
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); ev = e; if(!no()) bar.hidden = false; });
+  addEventListener('appinstalled', () => { ev = null; bar.hidden = true; });
+  document.getElementById('instGo').addEventListener('click', () => { bar.hidden = true; if(ev){ ev.prompt(); ev.userChoice.finally(() => { ev = null; }); } });
+  document.getElementById('instNo').addEventListener('click', () => { bar.hidden = true; try { sessionStorage.setItem('nnInstNo', '1'); } catch(e) {} });
+})();</script>
 </body>
 </html>
